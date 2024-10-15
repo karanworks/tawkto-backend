@@ -1,6 +1,7 @@
 const response = require("../utils/response");
 const loginService = require("../services/loginService");
 const Token = require("../utils/token");
+const getMenus = require("../utils/getMenus");
 
 class LoginController {
   async login(req, res) {
@@ -26,10 +27,12 @@ class LoginController {
             sameSite: "None",
           });
 
+          const menus = await getMenus(req, res, user);
+
           response.success(res, 200, {
             message: "User logged in successfully",
             status: "success",
-            data: user,
+            data: { ...user, menus },
           });
         }
       } else {

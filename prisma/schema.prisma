@@ -20,8 +20,50 @@ model User{
   password  String
   isVerified Boolean @default(false)
   verificationToken String?
+  roleId Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
+model Role {
+  id Int @id @default(autoincrement())
+  name String
+  status Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
 
+model Menu{
+  id Int @id @default(autoincrement())
+  menuLableId String
+  label String
+  icon String
+  link String
+  status Int
+  sequence Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model SubMenu {
+  id Int @id @default(autoincrement())
+  submenuLableId String
+  label String
+  parentId String
+  link String
+  status Int
+  menuId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  
+}
+
+model SubMenuAssign{
+  id Int @id @default(autoincrement())
+  menuId Int
+  status Int
+  subMenuId Int
+  roleId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 }
