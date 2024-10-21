@@ -1,9 +1,11 @@
 require("dotenv").config();
 const express = require("express");
-const app = express();
+const cors = require("cors");
 const registerRouter = require("./routes/registerRouter");
 const loginRouter = require("./routes/loginRouter");
-const cors = require("cors");
+const workspaceRouter = require("./routes/workspaceRouter");
+
+const app = express();
 
 app.use(express.json());
 app.use(
@@ -36,6 +38,7 @@ app.get("/", (req, res) => {
 
 app.use("/api", registerRouter);
 app.use("/api", loginRouter);
+app.use("/api", workspaceRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server listening on ${process.env.PORT}`);

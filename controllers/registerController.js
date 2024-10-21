@@ -47,7 +47,7 @@ class RegisterController {
             },
           });
 
-          res.send("<h3>Email verified successfully!</h3>");
+          res.send("<h3>Email verified successfully! Now you can login</h3>");
         }
       }
     } catch (error) {

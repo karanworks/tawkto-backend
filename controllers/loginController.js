@@ -12,7 +12,7 @@ class LoginController {
         if (!user.isVerified) {
           response.error(res, 400, {
             message: "Please verify your email",
-            status: "success",
+            status: "failure",
           });
         } else {
           const token = Token.generateToken({ id: user.id });

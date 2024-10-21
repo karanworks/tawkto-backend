@@ -67,3 +67,11 @@ model SubMenuAssign{
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
+
+model Workspace{
+    id        String   @id @default(uuid())
+    name String
+    website String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+}
