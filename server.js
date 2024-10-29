@@ -4,6 +4,7 @@ const cors = require("cors");
 const registerRouter = require("./routes/registerRouter");
 const loginRouter = require("./routes/loginRouter");
 const workspaceRouter = require("./routes/workspaceRouter");
+const workspaceMembersRouter = require("./routes/workspaceMembersRouter");
 
 const app = express();
 
@@ -16,7 +17,6 @@ app.use(
     credentials: true,
   })
 );
-
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   // res.setHeader("Access-Control-Allow-Origin", "http://192.168.1.74:3000");
@@ -39,6 +39,7 @@ app.get("/", (req, res) => {
 app.use("/api", registerRouter);
 app.use("/api", loginRouter);
 app.use("/api", workspaceRouter);
+app.use("/api", workspaceMembersRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server listening on ${process.env.PORT}`);

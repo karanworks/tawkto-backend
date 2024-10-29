@@ -28,7 +28,11 @@ class RegisterService {
 
     const { password: userPassword, ...userWithoutpassword } = user;
 
-    await sendEmail(email, token);
+    await sendEmail(
+      email,
+      "Verification mail from tawkto",
+      `<span> Click this link to verify your email -> </span> <a href=http://localhost:3010/api/verify-email?token=${token} target="_blank">Verify Email</a>`
+    );
 
     return userWithoutpassword;
   }

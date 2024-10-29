@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-async function sendEmail(email, token) {
+async function sendEmail(email, subject, content) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -14,9 +14,9 @@ async function sendEmail(email, token) {
   const info = await transporter.sendMail({
     from: "<sendemail2k24@gmail.com>", // sender address
     to: email, // list of receivers
-    subject: "Verification mail for tawkto", // Subject line
+    subject: subject, // Subject line
     // text: "Hello world?", // plain text body
-    html: `<span> Click this link to verify your email -> </span> <a href=http://localhost:3010/api/verify-email?token=${token} target="_blank">Verify Email</a>`, // html body
+    html: content, // html body
   });
 }
 
