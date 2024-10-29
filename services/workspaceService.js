@@ -20,6 +20,17 @@ class WorkspaceService {
       throw new Error("Error while creating workspace ->", error);
     }
   }
+  async getWorkspaces() {
+    try {
+      const workspaces = await prisma.workspace.findMany({});
+
+      return workspaces;
+    } catch (error) {
+      console.log("ERROR ->", error);
+
+      throw new Error("Error while getting workspaces ->", error);
+    }
+  }
 }
 
 module.exports = new WorkspaceService();
