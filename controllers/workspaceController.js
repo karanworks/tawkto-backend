@@ -6,9 +6,7 @@ const prisma = new PrismaClient();
 class workspaceController {
   async createWorkspace(req, res) {
     try {
-      const workspace = await WorkspaceService.createWorkspace(req.body);
-
-      console.log("WORKSPACE CREATED ->", workspace);
+      const workspace = await WorkspaceService.createWorkspace(req);
 
       if (workspace) {
         response.success(res, 201, {
@@ -30,8 +28,6 @@ class workspaceController {
   async getWorkspaces(req, res) {
     try {
       const workspaces = await WorkspaceService.getWorkspaces();
-
-      console.log("WORKSPACE CREATED ->", workspaces);
 
       if (workspaces.length > 0) {
         response.success(res, 200, {

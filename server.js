@@ -1,10 +1,14 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+
+// Routers
 const registerRouter = require("./routes/registerRouter");
 const loginRouter = require("./routes/loginRouter");
 const workspaceRouter = require("./routes/workspaceRouter");
 const workspaceMembersRouter = require("./routes/workspaceMembersRouter");
+const logoutRouter = require("./routes/logoutRouter");
 
 const app = express();
 
@@ -15,6 +19,7 @@ app.use(
     origin: "http://localhost:3000",
     // origin: "http://192.168.1.74:3000",
     credentials: true,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
   })
 );
 app.use((req, res, next) => {
@@ -31,6 +36,7 @@ app.use((req, res, next) => {
   );
   next();
 });
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.send("Yup it is working!");
@@ -38,6 +44,7 @@ app.get("/", (req, res) => {
 
 app.use("/api", registerRouter);
 app.use("/api", loginRouter);
+app.use("/api", logoutRouter);
 app.use("/api", workspaceRouter);
 app.use("/api", workspaceMembersRouter);
 

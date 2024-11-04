@@ -1,6 +1,6 @@
 const response = require("../utils/response");
 const loginService = require("../services/loginService");
-const Token = require("../utils/token");
+
 const getMenus = require("../utils/getMenus");
 
 class LoginController {
@@ -15,16 +15,15 @@ class LoginController {
             status: "failure",
           });
         } else {
-          const token = Token.generateToken({ id: user.id });
-
           // cookie expiration date - 15 days
           const expirationDate = new Date(
             Date.now() + 15 * 24 * 60 * 60 * 1000
           );
-          res.cookie("token", token, {
+          res.cookie("token", user.token, {
             expires: expirationDate,
             httpOnly: true,
-            sameSite: "None",
+            // sameSite: "None",
+            // secure: false,
           });
 
           const menus = await getMenus(req, res, user);

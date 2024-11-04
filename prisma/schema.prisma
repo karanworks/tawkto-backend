@@ -17,9 +17,10 @@ model User{
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
-  password  String
+  password  String?
   isVerified Boolean @default(false)
   verificationToken String?
+  token String?
   roleId Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -72,6 +73,7 @@ model Workspace{
     id String   @id @default(uuid())
     name String
     website String
+    createdBy String
     createdAt DateTime @default(now())
     updatedAt DateTime @default(now())
 }
@@ -82,5 +84,4 @@ model WorkspaceMembers{
    memberId String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
-
 }
