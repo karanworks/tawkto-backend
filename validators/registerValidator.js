@@ -14,8 +14,6 @@ class RegisterValidator {
           .messages({
             "any.only": "Passwords do not match",
           }),
-      }).options({
-        allowUnknown: false, // Only allow the fields defined in the schema
       });
 
       const value = schema.validate(req.body);

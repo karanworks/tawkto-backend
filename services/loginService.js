@@ -23,9 +23,40 @@ class LoginService {
       },
     });
 
+    const workspaceMember = await prisma.workspaceMembers.findFirst({
+      where: {
+        memberId: user.id,
+      },
+    });
+
+    const workspace = await prisma.workspace.findFirst({
+      where: {
+        id: workspaceMember.workspaceId,
+      },
+    });
+
+    const workspaceMembersIds = await prisma.workspaceMembers.findMany({
+      where: {
+        workspaceId: workspace.id,
+      },
+    });
+
+    const workspaceMembers = await prisma.user.findMany({
+      where: {
+        id: {
+          in: workspaceMembersIds.map((member) => member.memberId),
+          not: user.id,
+        },
+      },
+    });
+
     if (user.password === password) {
       const { password: userPassword, ...userWithoutpassword } = user;
-      return { ...userWithoutpassword, token };
+      return {
+        ...userWithoutpassword,
+        token,
+        workspace: { ...workspace, workspaceMembers },
+      };
     } else {
       return null;
     }

@@ -16,12 +16,12 @@ class WorkspaceService {
         },
       });
 
-      // const workspaceAssign = await prisma.workspaceAssign.create({
-      //   data: {
-      //     workspaceId: workspace.id,
-      //     // userId:
-      //   },
-      // });
+      await prisma.workspaceMembers.create({
+        data: {
+          workspaceId: workspace.id,
+          memberId: loggedInUser.id,
+        },
+      });
 
       return workspace;
     } catch (error) {

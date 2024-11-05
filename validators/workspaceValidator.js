@@ -7,8 +7,6 @@ class WorkspaceValidtor {
       const schema = Joi.object({
         workspaceName: Joi.string().required(),
         websiteAddress: Joi.string().required(),
-      }).options({
-        allowUnknown: false, // Only allow the fields defined in the schema
       });
 
       const value = schema.validate(req.body);

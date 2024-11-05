@@ -2,6 +2,7 @@ const response = require("../utils/response");
 const loginService = require("../services/loginService");
 
 const getMenus = require("../utils/getMenus");
+const { Prisma } = require("@prisma/client");
 
 class LoginController {
   async login(req, res) {

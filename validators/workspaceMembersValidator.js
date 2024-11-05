@@ -8,10 +8,8 @@ class WorkspaceMembersValidator {
         name: Joi.string().required(),
         email: Joi.string().required(),
         role: Joi.string().required(),
-      }).options({
-        allowUnknown: false, // Only allow the fields defined in the schema
+        workspaceId: Joi.string().required(),
       });
-
       const value = schema.validate(req.body);
       return response.joiResponse(value, req, res, next);
     } catch (error) {

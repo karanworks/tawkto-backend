@@ -7,8 +7,6 @@ class LoginValidator {
       const schema = Joi.object({
         email: Joi.string().email().required(),
         password: Joi.string().min(6).required(),
-      }).options({
-        allowUnknown: false, // Only allow the fields defined in the schema
       });
 
       const value = schema.validate(req.body);
