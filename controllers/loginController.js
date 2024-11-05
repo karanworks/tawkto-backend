@@ -22,8 +22,6 @@ class LoginController {
           res.cookie("token", user.token, {
             expires: expirationDate,
             httpOnly: true,
-            // sameSite: "None",
-            // secure: false,
           });
 
           const menus = await getMenus(req, res, user);

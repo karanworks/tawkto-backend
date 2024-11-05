@@ -9,7 +9,7 @@ workspaceMembersRouter.post(
   workspaceMembersController.inviteWorkspaceMembers
 );
 workspaceMembersRouter.post(
-  "/set-password/user/:userId",
+  "/set-password",
   workspaceMembersController.setPassword
 );
 

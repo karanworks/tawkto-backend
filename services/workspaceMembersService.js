@@ -50,6 +50,17 @@ class WorkspaceMembersService {
           },
         });
 
+        const token = Token.generateToken({ id: user.id });
+
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            verificationToken: token,
+          },
+        });
+
         sendEmail(
           email,
           "You have been invited to join workspace",
@@ -60,7 +71,7 @@ class WorkspaceMembersService {
               You have been invited to join <strong style="font-weight: bold; color: #2980b9;">Workspace</strong>.
             </h6>
             <div style="margin-top: 20px; text-align: center;">
-              <a href="http://localhost:3010/api/set-password/user/${user.id}" 
+              <a href="http://localhost:3000/set-password/token/${token}" 
                  style="display: inline-block; padding: 12px 20px; background-color: #2980b9; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;"
                  target="_blank">
                 Set your password
@@ -80,21 +91,26 @@ class WorkspaceMembersService {
     }
   }
   async setPassword(req) {
-    try {
-      const { userId } = req.params;
+    const { token, password } = req.body;
+    console.log("SET PASSWORD BODY ->", req.body);
 
+    try {
       const user = await prisma.user.findFirst({
         where: {
-          id: userId,
+          verificationToken: token,
         },
       });
+
+      console.log("USER FOUND ->", user);
 
       const updateStatus = await prisma.user.update({
         where: {
           id: user.id,
         },
         data: {
+          password,
           isVerified: true,
+          verificationToken: null,
         },
       });
 
