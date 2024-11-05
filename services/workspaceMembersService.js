@@ -114,7 +114,6 @@ class WorkspaceMembersService {
   }
   async setPassword(req) {
     const { token, password } = req.body;
-    console.log("SET PASSWORD BODY ->", req.body);
 
     try {
       const user = await prisma.user.findFirst({
@@ -131,6 +130,21 @@ class WorkspaceMembersService {
           password,
           isVerified: true,
           verificationToken: null,
+        },
+      });
+
+      const workspaceMember = await prisma.workspaceMembers.findFirst({
+        where: {
+          memberId: user.id,
+        },
+      });
+
+      const invitationAccepted = await prisma.workspaceMembers.update({
+        where: {
+          id: workspaceMember.id,
+        },
+        data: {
+          invitationAccepted: true,
         },
       });
 

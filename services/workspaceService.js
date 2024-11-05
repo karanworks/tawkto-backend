@@ -20,6 +20,7 @@ class WorkspaceService {
         data: {
           workspaceId: workspace.id,
           memberId: loggedInUser.id,
+          invitationAccepted: true,
         },
       });
 

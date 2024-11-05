@@ -23,8 +23,6 @@ class LogoutService {
         },
       });
 
-      console.log("REMOVED TOKEN ->", removedToken);
-
       return user;
     } else {
       return null;

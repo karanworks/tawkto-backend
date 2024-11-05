@@ -82,6 +82,7 @@ model WorkspaceMembers{
    id String   @id @default(uuid())
    workspaceId String
    memberId String
+   invitationAccepted Boolean @default(false)
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }
