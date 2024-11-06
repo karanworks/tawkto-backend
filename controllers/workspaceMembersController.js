@@ -78,10 +78,11 @@ class workspaceMembersController {
       const user = await workspaceMembersService.joinWorkspace(req);
 
       if (user) {
-        response.success(res, 201, {
-          message: "Member joined workspace successfully",
-          status: "success",
-        });
+        res.redirect("http://localhost:3000/login");
+        // response.success(res, 201, {
+        //   message: "Member joined workspace successfully",
+        //   status: "success",
+        // });
       } else {
         response.error(res, 400, {
           message: "There was some error while joining workspace",

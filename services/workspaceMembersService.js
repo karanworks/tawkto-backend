@@ -54,6 +54,7 @@ class WorkspaceMembersService {
 
       if (memberExist) {
         // assign workspace
+
         await prisma.workspaceMembers.create({
           data: {
             workspaceId,
@@ -81,6 +82,8 @@ class WorkspaceMembersService {
           </div>
           `
         );
+
+        return memberExist;
       } else {
         const matchingRole = await prisma.role.findFirst({
           where: {
