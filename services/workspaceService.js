@@ -33,9 +33,20 @@ class WorkspaceService {
     try {
       const { userId } = req.params;
 
+      // const workspaces = await prisma.workspace.findFirst({
+      //   where: {
+      //     createdBy: userId,
+      //   },
+      // });
+      const workspaceMember = await prisma.workspaceMembers.findFirst({
+        where: {
+          memberId: userId,
+        },
+      });
+
       const workspaces = await prisma.workspace.findFirst({
         where: {
-          createdBy: userId,
+          id: workspaceMember.workspaceId,
         },
       });
 
