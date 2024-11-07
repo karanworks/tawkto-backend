@@ -29,9 +29,15 @@ class WorkspaceService {
       throw new Error("Error while creating workspace ->", error);
     }
   }
-  async getWorkspaces() {
+  async getWorkspaces(req) {
     try {
-      const workspaces = await prisma.workspace.findMany({});
+      const { userId } = req.params;
+
+      const workspaces = await prisma.workspace.findFirst({
+        where: {
+          createdBy: userId,
+        },
+      });
 
       return workspaces;
     } catch (error) {

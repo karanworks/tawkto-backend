@@ -27,18 +27,18 @@ class workspaceController {
   }
   async getWorkspaces(req, res) {
     try {
-      const workspaces = await WorkspaceService.getWorkspaces();
+      const workspaces = await WorkspaceService.getWorkspaces(req);
 
-      if (workspaces.length > 0) {
+      if (workspaces) {
         response.success(res, 200, {
           message: "Workspace fetched successfully",
           status: "success",
           data: workspaces,
         });
       } else {
-        response.error(res, 400, {
-          message: "There was some error while creating the workspace",
-          status: "failure",
+        response.success(res, 200, {
+          message: "Worksapce not found",
+          status: "success",
         });
       }
     } catch (error) {
