@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
+const generateRandomName = require("./utils/randomNameGenerator");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -126,10 +127,14 @@ io.on("connection", (socket) => {
     console.log("AGENT JOINED");
   });
 
-  socket.on("visitor-message", async ({ message, workspaceId }) => {
+  socket.on("visitor-message-request", async ({ message, workspaceId }) => {
     console.log("ROOMS ->", io.sockets.adapter.rooms);
 
-    socket.to(workspaceId).emit("visitor-message", message);
+    socket.to(workspaceId).emit("visitor-message-request", {
+      visitorId: socket.id,
+      messages: message,
+      name: "Karan",
+    });
   });
 
   socket.on("disconnect", () => {
