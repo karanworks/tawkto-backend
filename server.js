@@ -4,7 +4,6 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
-const generateRandomName = require("./utils/randomNameGenerator");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -16,7 +15,9 @@ const loginRouter = require("./routes/loginRouter");
 const workspaceRouter = require("./routes/workspaceRouter");
 const workspaceMembersRouter = require("./routes/workspaceMembersRouter");
 const logoutRouter = require("./routes/logoutRouter");
+const visitorChatRouter = require("./routes/visitorChatRouter");
 const path = require("path");
+const widgetStylesRouter = require("./routes/widgetStylesRouter");
 
 const app = express();
 
@@ -30,20 +31,35 @@ const io = new Server(server, {
 });
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "dist")));
 
 app.use(
   cors({
     // origin: "http://192.168.1.159:3000",
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:5500",
+      "http://localhost:5173",
+    ],
+    // origin: "http://127.0.0.1:5500",
     // origin: "http://192.168.1.74:3000",
     credentials: true,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
   })
 );
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+  "http://localhost:5173",
+];
+
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+  const origin = req.headers.referer;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  // res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   // res.setHeader("Access-Control-Allow-Origin", "http://192.168.1.74:3000");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -56,6 +72,9 @@ app.use((req, res, next) => {
   );
   next();
 });
+
+app.use(express.static(path.join(__dirname, "/")));
+
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
@@ -63,8 +82,11 @@ app.get("/", (req, res) => {
 });
 
 // Route for serving the widget
+// app.get("/api/render/widget", (req, res) => {
+//   res.sendFile(path.join(__dirname, "widget.js"));
+// });
 app.get("/api/render/widget", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist/index.html"));
+  res.sendFile(path.join(__dirname, "main.js"));
 });
 
 app.get("/api/widget/:workspaceId", (req, res) => {
@@ -72,7 +94,7 @@ app.get("/api/widget/:workspaceId", (req, res) => {
 
   console.log("GOT WIDGET ID HERE ->", workspaceId);
 
-  res.setHeader("Content-Type", "application/javascript");
+  // res.setHeader("Content-Type", "application/javascript");
 
   res.send(`
     (function (global) {
@@ -80,7 +102,8 @@ app.get("/api/widget/:workspaceId", (req, res) => {
       document.cookie = "widget_workspaceId=${workspaceId}";
 
       const iframeElement = document.createElement("iframe");
-      iframeElement.src = "http://localhost:3010/api/render/widget";
+      // iframeElement.src = "http://localhost:3010/api/render/widget";
+      iframeElement.src = "http://localhost:5173";
       iframeElement.classList.add("iframe-target");
 
       const style = document.createElement("style");
@@ -90,7 +113,7 @@ app.get("/api/widget/:workspaceId", (req, res) => {
           right: 0;
           bottom: 0;
           z-index: 9999;
-          background-color: red;
+         // background-color: red;
           border: none;
           width: 350px;
           height: 100%;
@@ -98,6 +121,14 @@ app.get("/api/widget/:workspaceId", (req, res) => {
 
       document.head.appendChild(style);
       document.body.appendChild(iframeElement);
+
+
+      // let visitorId;
+      // const visitorIdFromLocalStorage = localStorage.getItem("widget_visitorId")
+      // if(!visitorIdFromLocalStorage){
+      //   visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      //   localStorage.setItem("widget_visitorId", visitorId)
+      //   }
 
       iframeElement.onload = () => {
         iframeElement.contentWindow.postMessage({
@@ -115,14 +146,17 @@ app.use("/api", loginRouter);
 app.use("/api", logoutRouter);
 app.use("/api", workspaceRouter);
 app.use("/api", workspaceMembersRouter);
+app.use("/api", visitorChatRouter);
+app.use("/api", widgetStylesRouter);
 
 io.on("connection", (socket) => {
   socket.on("visitor-join", () => {
     socket.role = "visitor";
+    console.log("VISITOR JOINED");
   });
-  socket.on("agent-join", ({ id, workspaceId }) => {
+  socket.on("agent-join", ({ agentId, workspaceId }) => {
     socket.role = "agent";
-    socket.agentId = id;
+    socket.agentId = agentId;
     socket.join(workspaceId);
     console.log("AGENT JOINED");
   });

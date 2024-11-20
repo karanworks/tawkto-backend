@@ -89,9 +89,17 @@ model WorkspaceMembers{
 
 model Chat{
    id String   @id @default(uuid())
-   sender String
-   receiver String
+   assignedTo String? 
+   workspaceId String
    createdBy String 
+   createdAt DateTime @default(now())
+   updatedAt DateTime @default(now())
+}
+
+model ChatAssign{
+   id String   @id @default(uuid())
+   chatId String? 
+   userId String 
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }
@@ -99,10 +107,17 @@ model Chat{
 model Message{
    id String   @id @default(uuid())
    chatId String
-   message String
-   createdBy String 
+   content String
+   sender String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
+}
 
+model WidgetStyles{
+   id String   @id @default(uuid())
+   workspaceId String
+   theme Json
+   createdAt DateTime @default(now())
+   updatedAt DateTime @default(now())
 
 }
