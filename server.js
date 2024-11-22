@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
+const { v4 } = require("uuid");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -18,6 +19,7 @@ const logoutRouter = require("./routes/logoutRouter");
 const visitorChatRouter = require("./routes/visitorChatRouter");
 const path = require("path");
 const widgetStylesRouter = require("./routes/widgetStylesRouter");
+const { workerData } = require("worker_threads");
 
 const app = express();
 
@@ -82,29 +84,22 @@ app.get("/", (req, res) => {
 });
 
 // Route for serving the widget
-// app.get("/api/render/widget", (req, res) => {
-//   res.sendFile(path.join(__dirname, "widget.js"));
+// app.get("/api/widget/:workspaceId", (req, res) => {
+//   res.sendFile(path.join(__dirname, "main.js"));
 // });
-app.get("/api/render/widget", (req, res) => {
-  res.sendFile(path.join(__dirname, "main.js"));
-});
 
 app.get("/api/widget/:workspaceId", (req, res) => {
-  const { workspaceId } = req.params;
-
-  console.log("GOT WIDGET ID HERE ->", workspaceId);
-
-  // res.setHeader("Content-Type", "application/javascript");
-
+  const workspaceId = req.params.workspaceId;
+  res.setHeader("Content-Type", "application/javascript");
   res.send(`
     (function (global) {
-      global.$_widget_workspaceId = ${workspaceId};
+      global.$_widget_workspaceId = "${workspaceId}";
       document.cookie = "widget_workspaceId=${workspaceId}";
+      localStorage.setItem("widget_workspaceId","${workspaceId}");
 
       const iframeElement = document.createElement("iframe");
-      // iframeElement.src = "http://localhost:3010/api/render/widget";
-      iframeElement.src = "http://localhost:5173";
       iframeElement.classList.add("iframe-target");
+      iframeElement.src = "about:blank";
 
       const style = document.createElement("style");
       style.innerHTML = \`
@@ -113,7 +108,6 @@ app.get("/api/widget/:workspaceId", (req, res) => {
           right: 0;
           bottom: 0;
           z-index: 9999;
-         // background-color: red;
           border: none;
           width: 350px;
           height: 100%;
@@ -123,22 +117,28 @@ app.get("/api/widget/:workspaceId", (req, res) => {
       document.body.appendChild(iframeElement);
 
 
-      // let visitorId;
-      // const visitorIdFromLocalStorage = localStorage.getItem("widget_visitorId")
-      // if(!visitorIdFromLocalStorage){
-      //   visitorId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      //   localStorage.setItem("widget_visitorId", visitorId)
-      //   }
+      const iframeDoc = iframeElement.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(\`
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Vite + React</title>
+          <script type="module" crossorigin src="http://localhost:3010/dist/bundle.js"></script>
+          <link rel="stylesheet" crossorigin href="http://localhost:3010/dist/assets/index-cA65dY9O.css" />
+        </head>
+        <body>
+          <div id="root"></div>
+        </body>
+      </html>
+      \`);
+      iframeDoc.close();
 
-      iframeElement.onload = () => {
-        iframeElement.contentWindow.postMessage({
-          type: "SET_WORKSPACE_ID",
-          workspaceId: global.$_widget_workspaceId
-        }, "http://localhost:3010") 
-  }
-
+   
     })(window);
-`);
+  `);
 });
 
 app.use("/api", registerRouter);
@@ -150,8 +150,25 @@ app.use("/api", visitorChatRouter);
 app.use("/api", widgetStylesRouter);
 
 io.on("connection", (socket) => {
-  socket.on("visitor-join", () => {
+  socket.on("visitor-join", async ({ visitorId, name }) => {
+    socket.visitorId = visitorId;
     socket.role = "visitor";
+
+    const visitor = await prisma.visitor.findFirst({
+      where: {
+        visitorId,
+      },
+    });
+
+    if (!visitor) {
+      await prisma.visitor.create({
+        data: {
+          visitorId,
+          name,
+        },
+      });
+    }
+
     console.log("VISITOR JOINED");
   });
   socket.on("agent-join", ({ agentId, workspaceId }) => {
@@ -161,20 +178,144 @@ io.on("connection", (socket) => {
     console.log("AGENT JOINED");
   });
 
-  socket.on("visitor-message-request", async ({ message, workspaceId }) => {
-    console.log("ROOMS ->", io.sockets.adapter.rooms);
+  // Unique id for visitor
+  const uuid = v4();
 
-    socket.to(workspaceId).emit("visitor-message-request", {
-      visitorId: socket.id,
-      messages: message,
-      name: "Karan",
+  // socket.on(
+  //   "visitor-message-request",
+  //   async ({ message, workspaceId, visitor }) => {
+  //     const chatAlreadyExist = await prisma.chat.findFirst({
+  //       where: {
+  //         createdBy: visitor.visitorId,
+  //       },
+  //     });
+
+  //     if (!chatAlreadyExist) {
+  //       const chat = await prisma.chat.create({
+  //         data: {
+  //           workspaceId,
+  //           createdBy: visitor.visitorId,
+  //         },
+  //       });
+
+  //       await prisma.chatAssign.create({
+  //         data: {
+  //           chatId: chat.id,
+  //           userId: visitor.visitorId,
+  //         },
+  //       });
+
+  //       socket.to(workspaceId).emit("visitor-message-request", {
+  //         messages: message,
+  //         chatId: chat.id,
+  //         visitor,
+  //       });
+
+  //       await prisma.message.create({
+  //         data: {
+  //           chatId: chat.id,
+  //           sender: visitor,
+  //           content: message,
+  //         },
+  //       });
+  //     } else {
+  //       socket.to(workspaceId).emit("visitor-message-request", {
+  //         messages: message,
+  //         chatId: chatAlreadyExist.id,
+  //         visitor,
+  //       });
+  //       await prisma.message.create({
+  //         data: {
+  //           messages: message,
+  //           chatId: chatAlreadyExist.id,
+  //           sender: visitor,
+  //         },
+  //       });
+  //     }
+  //   }
+  // );
+  socket.on("visitor-message-request", async ({ workspaceId, visitor }) => {
+    let visitorRequest = await prisma.visitorRequest.findFirst({
+      where: {
+        workspaceId,
+        visitorId: visitor.visitorId,
+        status: "pending",
+      },
     });
+
+    if (!visitorRequest) {
+      visitorRequest = await prisma.visitorRequest.create({
+        data: {
+          workspaceId,
+          visitorId: visitor.visitorId,
+          status: "pending",
+        },
+      });
+    }
+
+    socket
+      .to(workspaceId)
+      .emit("visitor-message-request", { visitor, ...visitorRequest });
   });
 
-  socket.on("disconnect", () => {
-    console.log("SOCKET ROLE ->", socket.role);
+  socket.on("message", async ({ message, chatId, sender }) => {
+    console.log("MESSAGE HERE ->", message);
+    await prisma.message.create({
+      data: {
+        chatId,
+        content: message,
+        sender,
+      },
+    });
+    io.to(socket.id).emit("message", message);
+  });
 
-    console.log("A User Disconnected ->", socket.agentId);
+  socket.on(
+    "join-conversation",
+    async ({ agentId, chatId, visitorId, workspaceId }) => {
+      const pendingConversation = await prisma.visitorRequest.findFirst({
+        where: {
+          workspaceId,
+          visitorId,
+        },
+      });
+
+      await prisma.visitorRequest.update({
+        where: {
+          id: pendingConversation.id,
+        },
+        data: {
+          status: "accepted",
+        },
+      });
+
+      const alreadyAssigned = await prisma.chatAssign.findFirst({
+        where: {
+          chatId: chatId,
+          userId: agentId,
+        },
+      });
+
+      console.log("ALREADY EXIST ->", alreadyAssigned);
+
+      if (!alreadyAssigned) {
+        await prisma.chatAssign.create({
+          data: {
+            chatId: chatId,
+            userId: agentId,
+          },
+        });
+      }
+
+      // Join the same room as visitor
+      const sockets = Array.from(io.sockets.sockets.values()); // Get all sockets
+      const foundSocket = sockets.find((s) => s.visitorId === visitorId);
+      socket.join(foundSocket.id);
+    }
+  );
+
+  socket.on("disconnect", () => {
+    console.log("A User Disconnected ->", socket.id);
   });
 });
 

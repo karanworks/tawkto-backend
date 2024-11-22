@@ -89,9 +89,8 @@ model WorkspaceMembers{
 
 model Chat{
    id String   @id @default(uuid())
-   assignedTo String? 
    workspaceId String
-   createdBy String 
+   createdBy String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }
@@ -108,7 +107,16 @@ model Message{
    id String   @id @default(uuid())
    chatId String
    content String
-   sender String
+   sender Json
+   createdAt DateTime @default(now())
+   updatedAt DateTime @default(now())
+}
+
+model VisitorRequest{
+   id String   @id @default(uuid())
+   visitorId String
+   workspaceId String
+   status String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }
@@ -120,4 +128,12 @@ model WidgetStyles{
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 
+}
+
+model visitor {
+   id String   @id @default(uuid())
+   name String
+   visitorId String
+   createdAt DateTime @default(now())
+   updatedAt DateTime @default(now())
 }
