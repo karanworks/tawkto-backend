@@ -169,7 +169,7 @@ io.on("connection", (socket) => {
       });
     }
 
-    console.log("VISITOR JOINED");
+    console.log("VISITOR JOINED", socket.id);
   });
   socket.on("agent-join", ({ agentId, workspaceId }) => {
     socket.role = "agent";
@@ -234,41 +234,110 @@ io.on("connection", (socket) => {
   //     }
   //   }
   // );
-  socket.on("visitor-message-request", async ({ workspaceId, visitor }) => {
-    let visitorRequest = await prisma.visitorRequest.findFirst({
-      where: {
-        workspaceId,
-        visitorId: visitor.visitorId,
-        status: "pending",
-      },
-    });
+  socket.on(
+    "visitor-message-request",
+    async ({ workspaceId, visitor }, callback) => {
+      try {
+        let visitorRequest = await prisma.visitorRequest.findFirst({
+          where: {
+            workspaceId,
+            visitorId: visitor.visitorId,
+            status: "pending",
+          },
+        });
 
-    if (!visitorRequest) {
-      visitorRequest = await prisma.visitorRequest.create({
-        data: {
-          workspaceId,
-          visitorId: visitor.visitorId,
-          status: "pending",
+        let chat;
+        let chatAssign;
+
+        if (visitorRequest) {
+          chat = await prisma.chat.findFirst({
+            where: {
+              visitorRequestId: visitorRequest.id,
+            },
+          });
+          chatAssign = await prisma.chatAssign.findFirst({
+            where: {
+              chatId: chat.id,
+            },
+          });
+        }
+
+        console.log("CONDITION ->", !visitorRequest && !chat);
+
+        if (!visitorRequest && !chat) {
+          visitorRequest = await prisma.visitorRequest.create({
+            data: {
+              workspaceId,
+              visitorId: visitor.visitorId,
+              status: "pending",
+            },
+          });
+
+          console.log("CONDITION TRIGGERED ->", visitorRequest);
+
+          chat = await prisma.chat.create({
+            data: {
+              workspaceId,
+              visitorRequestId: visitorRequest.id,
+            },
+          });
+          chatAssign = await prisma.chatAssign.create({
+            data: {
+              chatId: chat.id,
+              userId: visitor.visitorId,
+            },
+          });
+        }
+
+        callback({
+          visitor,
+          ...visitorRequest,
+          chatId: chat.id,
+        });
+
+        socket.to(workspaceId).emit("visitor-message-request", {
+          visitor,
+          ...visitorRequest,
+          chatId: chat.id,
+        });
+
+        socket.to(socket.id).emit("visitor-message-request", {
+          visitor,
+          ...visitorRequest,
+          chatId: chat.id,
+        });
+      } catch (error) {
+        console.log("Error in Visitor Message Request ->", error);
+      }
+    }
+  );
+
+  socket.on(
+    "message",
+    async ({ message, chatId, sender, visitorRequestId, workspaceId }) => {
+      const visitorRequest = await prisma.visitorRequest.findFirst({
+        where: {
+          id: visitorRequestId,
         },
       });
+
+      const newMessage = await prisma.message.create({
+        data: {
+          chatId,
+          content: message.content,
+          sender,
+        },
+      });
+
+      if (visitorRequest.status === "pending") {
+        socket.to(workspaceId).emit("message", {
+          message: newMessage,
+        });
+      } else {
+        io.to(socket.id).emit("message", { message: newMessage });
+      }
     }
-
-    socket
-      .to(workspaceId)
-      .emit("visitor-message-request", { visitor, ...visitorRequest });
-  });
-
-  socket.on("message", async ({ message, chatId, sender }) => {
-    console.log("MESSAGE HERE ->", message);
-    await prisma.message.create({
-      data: {
-        chatId,
-        content: message,
-        sender,
-      },
-    });
-    io.to(socket.id).emit("message", message);
-  });
+  );
 
   socket.on(
     "join-conversation",
@@ -295,8 +364,6 @@ io.on("connection", (socket) => {
           userId: agentId,
         },
       });
-
-      console.log("ALREADY EXIST ->", alreadyAssigned);
 
       if (!alreadyAssigned) {
         await prisma.chatAssign.create({
