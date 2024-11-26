@@ -1,22 +1,22 @@
 const response = require("../utils/response");
-const VisitorChatService = require("../services/visitorChatService");
+const VisitorDetailsService = require("../services/visitorDetailsService");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-class visitorDetailsController {
-  async getVisitorChats(req, res) {
+class VisitorDetailsController {
+  async getVisitorDetails(req, res) {
     try {
-      const chats = await VisitorChatService.getVisitorChats(req);
+      const chats = await VisitorDetailsService.getVisitorDetails(req);
 
       if (chats) {
         response.success(res, 200, {
-          message: "Chats fetched successfully",
+          message: "Visitor details fetched successfully",
           status: "success",
           data: chats,
         });
       } else {
         response.success(res, 200, {
-          message: "Chat not found",
+          message: "Visitor details not found",
           status: "success",
         });
       }
@@ -27,4 +27,4 @@ class visitorDetailsController {
   }
 }
 
-module.exports = new visitorDetailsController();
+module.exports = new VisitorDetailsController();

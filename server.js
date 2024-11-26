@@ -19,8 +19,8 @@ const logoutRouter = require("./routes/logoutRouter");
 const visitorChatRouter = require("./routes/visitorChatRouter");
 const path = require("path");
 const widgetStylesRouter = require("./routes/widgetStylesRouter");
-const { workerData } = require("worker_threads");
 const visitorRequestRouter = require("./routes/chatRequestsRouter");
+const visitorDetailsRouter = require("./routes/visitorDetailsRouter");
 
 const app = express();
 
@@ -150,6 +150,7 @@ app.use("/api", workspaceMembersRouter);
 app.use("/api", visitorChatRouter);
 app.use("/api", widgetStylesRouter);
 app.use("/api", visitorRequestRouter);
+app.use("/api", visitorDetailsRouter);
 
 io.on("connection", (socket) => {
   socket.on("visitor-join", async ({ visitorId, name }) => {
@@ -309,11 +310,9 @@ io.on("connection", (socket) => {
     });
 
     if (visitorRequest.status === "pending") {
-      socket.to(workspaceId).emit("message", {
-        message: newMessage,
-      });
+      socket.to(workspaceId).emit("message", newMessage);
     } else {
-      io.to(socket.id).emit("message", { message: newMessage });
+      io.to(socket.id).emit("message", newMessage);
     }
   });
 

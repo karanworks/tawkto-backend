@@ -55,7 +55,21 @@ class ChatRequestsService {
         },
       });
 
-      return chatRequests;
+      const chatWithMessages = await Promise.all(
+        chatRequests.map(async (chat) => {
+          const messages = await prisma.message.findMany({
+            where: {
+              chatId: chat.id,
+            },
+          });
+
+          return { ...chat, messages };
+        })
+      );
+
+      console.log("CHAT WITH MESSAGES ->", chatWithMessages);
+
+      return chatWithMessages;
     } catch (error) {
       console.log("ERROR ->", error);
 
