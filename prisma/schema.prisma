@@ -90,7 +90,8 @@ model WorkspaceMembers{
 model Chat{
    id String   @id @default(uuid())
    workspaceId String
-   visitorRequestId String
+   visitorId String
+   status String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }
@@ -108,15 +109,6 @@ model Message{
    chatId String
    content String
    sender Json
-   createdAt DateTime @default(now())
-   updatedAt DateTime @default(now())
-}
-
-model VisitorRequest{
-   id String   @id @default(uuid())
-   visitorId String
-   workspaceId String
-   status String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }

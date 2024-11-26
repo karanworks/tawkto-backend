@@ -20,6 +20,7 @@ const visitorChatRouter = require("./routes/visitorChatRouter");
 const path = require("path");
 const widgetStylesRouter = require("./routes/widgetStylesRouter");
 const { workerData } = require("worker_threads");
+const visitorRequestRouter = require("./routes/chatRequestsRouter");
 
 const app = express();
 
@@ -148,6 +149,7 @@ app.use("/api", workspaceRouter);
 app.use("/api", workspaceMembersRouter);
 app.use("/api", visitorChatRouter);
 app.use("/api", widgetStylesRouter);
+app.use("/api", visitorRequestRouter);
 
 io.on("connection", (socket) => {
   socket.on("visitor-join", async ({ visitorId, name }) => {
@@ -171,6 +173,7 @@ io.on("connection", (socket) => {
 
     console.log("VISITOR JOINED", socket.id);
   });
+
   socket.on("agent-join", ({ agentId, workspaceId }) => {
     socket.role = "agent";
     socket.agentId = agentId;
@@ -238,7 +241,7 @@ io.on("connection", (socket) => {
     "visitor-message-request",
     async ({ workspaceId, visitor }, callback) => {
       try {
-        let visitorRequest = await prisma.visitorRequest.findFirst({
+        let chatRequest = await prisma.chat.findFirst({
           where: {
             workspaceId,
             visitorId: visitor.visitorId,
@@ -249,36 +252,12 @@ io.on("connection", (socket) => {
         let chat;
         let chatAssign;
 
-        if (visitorRequest) {
-          chat = await prisma.chat.findFirst({
-            where: {
-              visitorRequestId: visitorRequest.id,
-            },
-          });
-          chatAssign = await prisma.chatAssign.findFirst({
-            where: {
-              chatId: chat.id,
-            },
-          });
-        }
-
-        console.log("CONDITION ->", !visitorRequest && !chat);
-
-        if (!visitorRequest && !chat) {
-          visitorRequest = await prisma.visitorRequest.create({
+        if (!chatRequest) {
+          chat = await prisma.chat.create({
             data: {
               workspaceId,
               visitorId: visitor.visitorId,
               status: "pending",
-            },
-          });
-
-          console.log("CONDITION TRIGGERED ->", visitorRequest);
-
-          chat = await prisma.chat.create({
-            data: {
-              workspaceId,
-              visitorRequestId: visitorRequest.id,
             },
           });
           chatAssign = await prisma.chatAssign.create({
@@ -289,21 +268,23 @@ io.on("connection", (socket) => {
           });
         }
 
+        console.log("CHAT ID ->", chat);
+
         callback({
           visitor,
-          ...visitorRequest,
+          ...chatRequest,
           chatId: chat.id,
         });
 
         socket.to(workspaceId).emit("visitor-message-request", {
           visitor,
-          ...visitorRequest,
+          ...chatRequest,
           chatId: chat.id,
         });
 
         socket.to(socket.id).emit("visitor-message-request", {
           visitor,
-          ...visitorRequest,
+          ...chatRequest,
           chatId: chat.id,
         });
       } catch (error) {
@@ -312,32 +293,29 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on(
-    "message",
-    async ({ message, chatId, sender, visitorRequestId, workspaceId }) => {
-      const visitorRequest = await prisma.visitorRequest.findFirst({
-        where: {
-          id: visitorRequestId,
-        },
-      });
+  socket.on("message", async ({ message, chatId, sender, workspaceId }) => {
+    const visitorRequest = await prisma.chat.findFirst({
+      where: {
+        id: chatId,
+      },
+    });
 
-      const newMessage = await prisma.message.create({
-        data: {
-          chatId,
-          content: message.content,
-          sender,
-        },
-      });
+    const newMessage = await prisma.message.create({
+      data: {
+        chatId,
+        content: message.content,
+        sender,
+      },
+    });
 
-      if (visitorRequest.status === "pending") {
-        socket.to(workspaceId).emit("message", {
-          message: newMessage,
-        });
-      } else {
-        io.to(socket.id).emit("message", { message: newMessage });
-      }
+    if (visitorRequest.status === "pending") {
+      socket.to(workspaceId).emit("message", {
+        message: newMessage,
+      });
+    } else {
+      io.to(socket.id).emit("message", { message: newMessage });
     }
-  );
+  });
 
   socket.on(
     "join-conversation",
