@@ -250,6 +250,8 @@ io.on("connection", (socket) => {
           },
         });
 
+        console.log("Visitor Message Request event called ->");
+
         let chat;
         let chatAssign;
 
@@ -295,7 +297,7 @@ io.on("connection", (socket) => {
   );
 
   socket.on("message", async ({ message, chatId, sender, workspaceId }) => {
-    const visitorRequest = await prisma.chat.findFirst({
+    const chatRequest = await prisma.chat.findFirst({
       where: {
         id: chatId,
       },
@@ -309,7 +311,7 @@ io.on("connection", (socket) => {
       },
     });
 
-    if (visitorRequest.status === "pending") {
+    if (chatRequest.status === "pending") {
       socket.to(workspaceId).emit("message", newMessage);
     } else {
       io.to(socket.id).emit("message", newMessage);
