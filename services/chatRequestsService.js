@@ -46,12 +46,15 @@ class ChatRequestsService {
   }
   async getChatRequests(req) {
     try {
-      const { workspaceId } = req.params;
+      const { agentId } = req.params;
 
       const chatRequests = await prisma.chat.findMany({
         where: {
-          workspaceId,
-          status: "pending",
+          ChatAssign: {
+            none: {
+              userId: agentId,
+            },
+          },
         },
       });
 
@@ -66,8 +69,6 @@ class ChatRequestsService {
           return { ...chat, messages };
         })
       );
-
-      console.log("CHAT WITH MESSAGES ->", chatWithMessages);
 
       return chatWithMessages;
     } catch (error) {

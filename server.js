@@ -246,7 +246,6 @@ io.on("connection", (socket) => {
           where: {
             workspaceId,
             visitorId: visitor.visitorId,
-            status: "pending",
           },
         });
 
@@ -260,7 +259,6 @@ io.on("connection", (socket) => {
             data: {
               workspaceId,
               visitorId: visitor.visitorId,
-              status: "pending",
             },
           });
           chatAssign = await prisma.chatAssign.create({
@@ -303,6 +301,8 @@ io.on("connection", (socket) => {
       },
     });
 
+    console.log("MESSAGE EVENT TRIGGERED ->", message);
+
     const newMessage = await prisma.message.create({
       data: {
         chatId,
@@ -310,53 +310,23 @@ io.on("connection", (socket) => {
         sender,
       },
     });
-
-    if (chatRequest.status === "pending") {
-      socket.to(workspaceId).emit("message", newMessage);
-    } else {
-      io.to(socket.id).emit("message", newMessage);
-    }
+    socket.to(workspaceId).emit("message", newMessage);
   });
 
   socket.on(
     "join-conversation",
     async ({ agentId, chatId, visitorId, workspaceId }) => {
-      const pendingConversation = await prisma.visitorRequest.findFirst({
-        where: {
-          workspaceId,
-          visitorId,
-        },
-      });
-
-      await prisma.visitorRequest.update({
-        where: {
-          id: pendingConversation.id,
-        },
+      await prisma.chatAssign.create({
         data: {
-          status: "accepted",
-        },
-      });
-
-      const alreadyAssigned = await prisma.chatAssign.findFirst({
-        where: {
           chatId: chatId,
           userId: agentId,
         },
       });
 
-      if (!alreadyAssigned) {
-        await prisma.chatAssign.create({
-          data: {
-            chatId: chatId,
-            userId: agentId,
-          },
-        });
-      }
-
       // Join the same room as visitor
-      const sockets = Array.from(io.sockets.sockets.values()); // Get all sockets
-      const foundSocket = sockets.find((s) => s.visitorId === visitorId);
-      socket.join(foundSocket.id);
+      // const sockets = Array.from(io.sockets.sockets.values()); // Get all sockets
+      // const foundSocket = sockets.find((s) => s.visitorId === visitorId);
+      // socket.join(foundSocket.id);
     }
   );
 
