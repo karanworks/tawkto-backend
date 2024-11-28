@@ -21,6 +21,7 @@ const path = require("path");
 const widgetStylesRouter = require("./routes/widgetStylesRouter");
 const visitorRequestRouter = require("./routes/chatRequestsRouter");
 const visitorDetailsRouter = require("./routes/visitorDetailsRouter");
+const openChatsRouter = require("./routes/openChatsRouter");
 
 const app = express();
 
@@ -151,11 +152,12 @@ app.use("/api", visitorChatRouter);
 app.use("/api", widgetStylesRouter);
 app.use("/api", visitorRequestRouter);
 app.use("/api", visitorDetailsRouter);
+app.use("/api", openChatsRouter);
 
 io.on("connection", (socket) => {
   socket.on("visitor-join", async ({ visitorId, name }) => {
-    socket.visitorId = visitorId;
-    socket.role = "visitor";
+    socket.data.visitorId = visitorId;
+    socket.data.role = "visitor";
 
     const visitor = await prisma.visitor.findFirst({
       where: {
@@ -176,10 +178,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("agent-join", ({ agentId, workspaceId }) => {
-    socket.role = "agent";
-    socket.agentId = agentId;
+    socket.data.role = "agent";
+    socket.data.agentId = agentId;
     socket.join(workspaceId);
-    console.log("AGENT JOINED");
+    console.log("AGENT JOINED", socket.id);
   });
 
   // Unique id for visitor
@@ -269,8 +271,6 @@ io.on("connection", (socket) => {
           });
         }
 
-        console.log("CHAT ID ->", chat);
-
         callback({
           visitor,
           ...chatRequest,
@@ -294,14 +294,30 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("message", async ({ message, chatId, sender, workspaceId }) => {
-    const chatRequest = await prisma.chat.findFirst({
+  socket.on("message", async ({ message, chatId, sender, to }) => {
+    const chat = await prisma.chat.findFirst({
       where: {
         id: chatId,
       },
     });
 
-    console.log("MESSAGE EVENT TRIGGERED ->", message);
+    const chatAssign = await prisma.chatAssign.findMany({
+      where: {
+        chatId: chat.id,
+        userId: {
+          not: sender.visitorId,
+        },
+      },
+    });
+    const agentUserIds = chatAssign.map((assign) => assign.userId);
+
+    const matchingSocketIds = [];
+
+    io.sockets.sockets.forEach((socket) => {
+      if (agentUserIds.includes(socket.data.agentId)) {
+        matchingSocketIds.push(socket.id); // Collect matching socket IDs
+      }
+    });
 
     const newMessage = await prisma.message.create({
       data: {
@@ -310,7 +326,28 @@ io.on("connection", (socket) => {
         sender,
       },
     });
-    socket.to(workspaceId).emit("message", newMessage);
+
+    // It means that any agent has not joined the chat yet
+    if (!chatAssign.length) {
+      socket.to(to).emit("message", newMessage);
+    } else {
+      if (sender.type === "visitor") {
+        matchingSocketIds.forEach((agent) => {
+          io.to(agent).emit("message", newMessage);
+        });
+        io.to(socket.id).emit("message", newMessage);
+      } else if (sender.type === "agent") {
+        const matchingSocket = Array.from(io.sockets.sockets.values()).find(
+          (socket) => {
+            console.log("SOCKET ID ->", socket.data?.visitorId, "To ->", to);
+            return socket.data?.visitorId === to;
+          }
+        );
+
+        io.to(socket.id).emit("message", newMessage);
+        socket.to(matchingSocket?.id).emit("message", newMessage);
+      }
+    }
   });
 
   socket.on(
