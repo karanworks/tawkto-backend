@@ -29,6 +29,8 @@ class ChatRequestsController {
     try {
       const chatRequests = await ChatRequestsService.getChatRequests(req);
 
+      console.log("CHAT REQUESTS FETCHED ->", chatRequests);
+
       if (chatRequests) {
         response.success(res, 200, {
           message: "Chat requests fetched successfully",

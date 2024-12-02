@@ -244,19 +244,18 @@ io.on("connection", (socket) => {
     "visitor-message-request",
     async ({ workspaceId, visitor }, callback) => {
       try {
-        let chatRequest = await prisma.chat.findFirst({
+        let chat = await prisma.chat.findFirst({
           where: {
             workspaceId,
             visitorId: visitor.visitorId,
           },
         });
 
-        console.log("Visitor Message Request event called ->");
+        console.log("Visitor Message Request event called ->", chat);
 
-        let chat;
         let chatAssign;
 
-        if (!chatRequest) {
+        if (!chat) {
           chat = await prisma.chat.create({
             data: {
               workspaceId,
@@ -273,19 +272,19 @@ io.on("connection", (socket) => {
 
         callback({
           visitor,
-          ...chatRequest,
+          ...chat,
           chatId: chat.id,
         });
 
         socket.to(workspaceId).emit("visitor-message-request", {
           visitor,
-          ...chatRequest,
+          ...chat,
           chatId: chat.id,
         });
 
         socket.to(socket.id).emit("visitor-message-request", {
           visitor,
-          ...chatRequest,
+          ...chat,
           chatId: chat.id,
         });
       } catch (error) {
