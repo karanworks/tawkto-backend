@@ -64,6 +64,9 @@ class ChatRequestsService {
             where: {
               chatId: chat.id,
             },
+            orderBy: {
+              createdAt: "asc",
+            },
           });
 
           return { ...chat, messages };

@@ -99,6 +99,8 @@ app.get("/api/widget/:workspaceId", (req, res) => {
       document.cookie = "widget_workspaceId=${workspaceId}";
       localStorage.setItem("widget_workspaceId","${workspaceId}");
 
+ 
+
       const iframeElement = document.createElement("iframe");
       iframeElement.classList.add("iframe-target");
       iframeElement.src = "about:blank";
@@ -174,6 +176,8 @@ io.on("connection", (socket) => {
       });
     }
 
+    socket.join(visitorId);
+
     console.log("VISITOR JOINED", socket.id);
   });
 
@@ -184,62 +188,6 @@ io.on("connection", (socket) => {
     console.log("AGENT JOINED", socket.id);
   });
 
-  // Unique id for visitor
-  const uuid = v4();
-
-  // socket.on(
-  //   "visitor-message-request",
-  //   async ({ message, workspaceId, visitor }) => {
-  //     const chatAlreadyExist = await prisma.chat.findFirst({
-  //       where: {
-  //         createdBy: visitor.visitorId,
-  //       },
-  //     });
-
-  //     if (!chatAlreadyExist) {
-  //       const chat = await prisma.chat.create({
-  //         data: {
-  //           workspaceId,
-  //           createdBy: visitor.visitorId,
-  //         },
-  //       });
-
-  //       await prisma.chatAssign.create({
-  //         data: {
-  //           chatId: chat.id,
-  //           userId: visitor.visitorId,
-  //         },
-  //       });
-
-  //       socket.to(workspaceId).emit("visitor-message-request", {
-  //         messages: message,
-  //         chatId: chat.id,
-  //         visitor,
-  //       });
-
-  //       await prisma.message.create({
-  //         data: {
-  //           chatId: chat.id,
-  //           sender: visitor,
-  //           content: message,
-  //         },
-  //       });
-  //     } else {
-  //       socket.to(workspaceId).emit("visitor-message-request", {
-  //         messages: message,
-  //         chatId: chatAlreadyExist.id,
-  //         visitor,
-  //       });
-  //       await prisma.message.create({
-  //         data: {
-  //           messages: message,
-  //           chatId: chatAlreadyExist.id,
-  //           sender: visitor,
-  //         },
-  //       });
-  //     }
-  //   }
-  // );
   socket.on(
     "visitor-message-request",
     async ({ workspaceId, visitor }, callback) => {
@@ -314,9 +262,12 @@ io.on("connection", (socket) => {
 
     io.sockets.sockets.forEach((socket) => {
       if (agentUserIds.includes(socket.data.agentId)) {
-        matchingSocketIds.push(socket.id); // Collect matching socket IDs
+        // matchingSocketIds.push(socket.id); COMMENTED THIS LINE ONLY
+        socket.join(chat.visitorId);
       }
     });
+
+    console.log("AGENT USER IDS ->", agentUserIds);
 
     const newMessage = await prisma.message.create({
       data: {
@@ -327,26 +278,29 @@ io.on("connection", (socket) => {
     });
 
     // It means that any agent has not joined the chat yet
-    if (!chatAssign.length) {
-      socket.to(to).emit("message", newMessage);
-    } else {
-      if (sender.type === "visitor") {
-        matchingSocketIds.forEach((agent) => {
-          io.to(agent).emit("message", newMessage);
-        });
-        io.to(socket.id).emit("message", newMessage);
-      } else if (sender.type === "agent") {
-        const matchingSocket = Array.from(io.sockets.sockets.values()).find(
-          (socket) => {
-            console.log("SOCKET ID ->", socket.data?.visitorId, "To ->", to);
-            return socket.data?.visitorId === to;
-          }
-        );
+    // if (!chatAssign.length) {
+    //   socket.to(to).emit("message", newMessage);
+    // } else {
+    //   if (sender.type === "visitor") {
+    //     matchingSocketIds.forEach((agent) => {
+    //       io.to(agent).emit("message", newMessage);
+    //     });
+    //     io.to(socket.id).emit("message", newMessage);
+    //   } else if (sender.type === "agent") {
+    //     const matchingSocket = Array.from(io.sockets.sockets.values()).find(
+    //       (socket) => {
+    //         console.log("SOCKET ID ->", socket.data?.visitorId, "To ->", to);
+    //         return socket.data?.visitorId === to;
+    //       }
+    //     );
 
-        io.to(socket.id).emit("message", newMessage);
-        socket.to(matchingSocket?.id).emit("message", newMessage);
-      }
-    }
+    //     io.to(socket.id).emit("message", newMessage);
+    //     socket.to(matchingSocket?.id).emit("message", newMessage);
+    //   }
+    // }
+
+    io.to(to).emit("message", newMessage);
+    io.to(socket.id).emit("message", newMessage);
   });
 
   socket.on(

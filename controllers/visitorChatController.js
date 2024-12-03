@@ -6,22 +6,22 @@ const prisma = new PrismaClient();
 class visitorDetailsController {
   async getVisitorChats(req, res) {
     try {
-      const chats = await VisitorChatService.getVisitorChats(req);
+      const chat = await VisitorChatService.getVisitorChats(req);
 
-      if (chats) {
+      if (chat) {
         response.success(res, 200, {
-          message: "Chats fetched successfully",
+          message: "visitor chats fetched successfully",
           status: "success",
-          data: chats,
+          data: chat,
         });
       } else {
         response.success(res, 200, {
-          message: "Chat not found",
+          message: "visitor chat not found",
           status: "success",
         });
       }
     } catch (error) {
-      console.log("Error while fetching chats ->", error);
+      console.log("Error while fetching visitor chats ->", error);
       response.error(res, 400);
     }
   }
