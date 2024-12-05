@@ -93,6 +93,7 @@ model Chat{
    visitorId String
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
+   accepted Boolean @default(false)
 
    ChatAssign  ChatAssign[]
    

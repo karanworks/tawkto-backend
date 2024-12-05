@@ -257,6 +257,8 @@ io.on("connection", (socket) => {
     });
 
     if (socket.data.role === "visitor") {
+      console.log("WORKSPACE ->", io.sockets.adapter.rooms);
+
       io.to(socket.id).emit("message", newMessage);
       io.to(to).emit("message", newMessage);
     } else if (socket.data.role === "agent") {
@@ -268,6 +270,15 @@ io.on("connection", (socket) => {
   socket.on(
     "join-conversation",
     async ({ agentId, chatId, visitorId, workspaceId }) => {
+      await prisma.chat.update({
+        where: {
+          id: chatId,
+        },
+        data: {
+          accepted: true,
+        },
+      });
+
       await prisma.chatAssign.create({
         data: {
           chatId: chatId,
@@ -275,10 +286,9 @@ io.on("connection", (socket) => {
         },
       });
 
-      // Join the same room as visitor
-      // const sockets = Array.from(io.sockets.sockets.values()); // Get all sockets
-      // const foundSocket = sockets.find((s) => s.visitorId === visitorId);
-      // socket.join(foundSocket.id);
+      io.to(workspaceId).emit("joined-conversation", { agentId, chatId });
+
+      console.log("WORKSPACE ID ON JOIN CONVERSATION ->", workspaceId);
     }
   );
 
