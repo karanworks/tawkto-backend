@@ -24,6 +24,19 @@ class WorkspaceService {
         },
       });
 
+      // Default widget styles
+      await prisma.widgetStyles.create({
+        data: {
+          workspaceId: workspace.id,
+          theme: {
+            backgroundColor: "#3BA9E5",
+            textColor: "#ffffff",
+            logoColor: "#3BA9E5",
+            sendButtonBackgroundColor: "#3BA9E5",
+          },
+        },
+      });
+
       return workspace;
     } catch (error) {
       throw new Error("Error while creating workspace ->", error);

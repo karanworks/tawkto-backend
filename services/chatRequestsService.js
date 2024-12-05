@@ -73,8 +73,6 @@ class ChatRequestsService {
         })
       );
 
-      console.log("CHAT REQUESTS FETCHED IN SERVICE->", chatRequests);
-
       return chatWithMessages;
     } catch (error) {
       console.log("ERROR ->", error);

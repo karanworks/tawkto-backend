@@ -38,6 +38,7 @@ class LoginService {
     // If no workspace member entry is found, return user info without workspace details
     if (!workspaceMember) {
       const { password: userPassword, ...userWithoutPassword } = user;
+
       return { ...userWithoutPassword, token, workspace: null };
     }
 
@@ -48,34 +49,43 @@ class LoginService {
       },
     });
 
-    const workspaceMembersIds = await prisma.workspaceMembers.findMany({
-      where: {
-        workspaceId: workspace.id,
-      },
-    });
+    let workspaceMembersInfo;
 
-    const workspaceMembers = await prisma.user.findMany({
-      where: {
-        id: {
-          in: workspaceMembersIds.map((member) => member.memberId),
+    if (workspace) {
+      const workspaceMembersIds = await prisma.workspaceMembers.findMany({
+        where: {
+          workspaceId: workspace.id,
         },
-      },
-    });
+      });
 
-    const workspaceMembersInfo = workspaceMembersIds.map((memberIdRecord) => {
-      const userInfo = workspaceMembers.find(
-        (user) => user.id === memberIdRecord.memberId
-      );
-      return {
-        invitationAccepted: memberIdRecord.invitationAccepted,
-        name: userInfo.name,
-        email: userInfo.email,
-        roleId: userInfo.roleId,
-      };
-    });
+      const workspaceMembers = await prisma.user.findMany({
+        where: {
+          id: {
+            in: workspaceMembersIds.map((member) => member.memberId),
+          },
+        },
+      });
+
+      workspaceMembersInfo = workspaceMembersIds.map((memberIdRecord) => {
+        const userInfo = workspaceMembers.find(
+          (user) => user.id === memberIdRecord.memberId
+        );
+        return {
+          invitationAccepted: memberIdRecord.invitationAccepted,
+          name: userInfo.name,
+          email: userInfo.email,
+          roleId: userInfo.roleId,
+        };
+      });
+    }
 
     if (user.password === password) {
       const { password: userPassword, ...userWithoutPassword } = user;
+      // console.log("WORKSPACE WHILE LOGGING IN ->", {
+      //   ...userWithoutPassword,
+      //   token,
+      //   workspace: { ...workspace, workspaceMembers: workspaceMembersInfo },
+      // });
       return {
         ...userWithoutPassword,
         token,

@@ -185,6 +185,8 @@ io.on("connection", (socket) => {
     socket.data.role = "agent";
     socket.data.agentId = agentId;
     socket.join(workspaceId);
+    console.log("WORKSPACE ->", workspaceId);
+
     console.log("AGENT JOINED", socket.id);
   });
 
@@ -198,8 +200,6 @@ io.on("connection", (socket) => {
             visitorId: visitor.visitorId,
           },
         });
-
-        console.log("Visitor Message Request event called ->", chat);
 
         let chatAssign;
 
@@ -248,27 +248,6 @@ io.on("connection", (socket) => {
       },
     });
 
-    const chatAssign = await prisma.chatAssign.findMany({
-      where: {
-        chatId: chat.id,
-        userId: {
-          not: sender.visitorId,
-        },
-      },
-    });
-    const agentUserIds = chatAssign.map((assign) => assign.userId);
-
-    const matchingSocketIds = [];
-
-    io.sockets.sockets.forEach((socket) => {
-      if (agentUserIds.includes(socket.data.agentId)) {
-        // matchingSocketIds.push(socket.id); COMMENTED THIS LINE ONLY
-        socket.join(chat.visitorId);
-      }
-    });
-
-    console.log("AGENT USER IDS ->", agentUserIds);
-
     const newMessage = await prisma.message.create({
       data: {
         chatId,
@@ -277,30 +256,13 @@ io.on("connection", (socket) => {
       },
     });
 
-    // It means that any agent has not joined the chat yet
-    // if (!chatAssign.length) {
-    //   socket.to(to).emit("message", newMessage);
-    // } else {
-    //   if (sender.type === "visitor") {
-    //     matchingSocketIds.forEach((agent) => {
-    //       io.to(agent).emit("message", newMessage);
-    //     });
-    //     io.to(socket.id).emit("message", newMessage);
-    //   } else if (sender.type === "agent") {
-    //     const matchingSocket = Array.from(io.sockets.sockets.values()).find(
-    //       (socket) => {
-    //         console.log("SOCKET ID ->", socket.data?.visitorId, "To ->", to);
-    //         return socket.data?.visitorId === to;
-    //       }
-    //     );
-
-    //     io.to(socket.id).emit("message", newMessage);
-    //     socket.to(matchingSocket?.id).emit("message", newMessage);
-    //   }
-    // }
-
-    io.to(to).emit("message", newMessage);
-    io.to(socket.id).emit("message", newMessage);
+    if (socket.data.role === "visitor") {
+      io.to(socket.id).emit("message", newMessage);
+      io.to(to).emit("message", newMessage);
+    } else if (socket.data.role === "agent") {
+      io.to(to).emit("message", newMessage);
+      io.to(chat.workspaceId).emit("message", newMessage);
+    }
   });
 
   socket.on(

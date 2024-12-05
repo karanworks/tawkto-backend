@@ -55,6 +55,7 @@ class WidgetStylesService {
             workspaceId,
           },
         });
+
         return widgetStyles;
       } else {
         return null;
