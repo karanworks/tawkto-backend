@@ -48,6 +48,13 @@ class ChatRequestsService {
     try {
       const { agentId } = req.params;
 
+      // fetching user to check his role
+      const user = await prisma.user.findFirst({
+        where: {
+          id: agentId,
+        },
+      });
+
       const chatRequests = await prisma.chat.findMany({
         where: {
           ChatAssign: {
@@ -58,8 +65,22 @@ class ChatRequestsService {
         },
       });
 
+      const filteredRequests = chatRequests
+        .map((request) => {
+          if (request.accepted === false) {
+            return request;
+          } else if (request.accepted === true) {
+            if (user.roleId === 1) {
+              return request;
+            } else {
+              return null;
+            }
+          }
+        })
+        .filter(Boolean);
+
       const chatWithMessages = await Promise.all(
-        chatRequests.map(async (chat) => {
+        filteredRequests.map(async (chat) => {
           const messages = await prisma.message.findMany({
             where: {
               chatId: chat.id,

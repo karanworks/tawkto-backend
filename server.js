@@ -132,6 +132,7 @@ app.get("/api/widget/:workspaceId", (req, res) => {
           <title>Vite + React</title>
           <script type="module" crossorigin src="http://localhost:3010/dist/bundle.js"></script>
           <link rel="stylesheet" crossorigin href="http://localhost:3010/dist/assets/index-cA65dY9O.css" />
+          <link rel="stylesheet" crossorigin href="http://localhost:3010/dist/assets/index-4JIOBxZ2.css" />
         </head>
         <body>
           <div id="root"></div>
