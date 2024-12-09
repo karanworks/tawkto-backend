@@ -43,6 +43,7 @@ app.use(
       "http://localhost:3000",
       "http://127.0.0.1:5500",
       "http://localhost:5173",
+      "http://192.168.1.222",
     ],
     // origin: "http://127.0.0.1:5500",
     // origin: "http://192.168.1.74:3000",
@@ -55,6 +56,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:5500",
   "http://localhost:5173",
+  "http://192.168.1.222",
 ];
 
 app.use((req, res, next) => {
@@ -92,6 +94,12 @@ app.get("/", (req, res) => {
 
 app.get("/api/widget/:workspaceId", (req, res) => {
   const workspaceId = req.params.workspaceId;
+
+  const CLIENT_URL =
+    process.env.NODE_ENV === "production"
+      ? process.env.CLIENT_PROD_URL
+      : process.env.CLIENT_DEV_URL;
+
   res.setHeader("Content-Type", "application/javascript");
   res.send(`
     (function (global) {
@@ -130,9 +138,10 @@ app.get("/api/widget/:workspaceId", (req, res) => {
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>Vite + React</title>
-          <script type="module" crossorigin src="http://localhost:3010/dist/bundle.js"></script>
-          <link rel="stylesheet" crossorigin href="http://localhost:3010/dist/assets/index-cA65dY9O.css" />
-          <link rel="stylesheet" crossorigin href="http://localhost:3010/dist/assets/index-4JIOBxZ2.css" />
+  
+          <script type="module" crossorigin src="${CLIENT_URL}:3010/dist/bundle.js"></script>
+          <link rel="stylesheet" crossorigin href="${CLIENT_URL}:3010/dist/assets/index-cA65dY9O.css" />
+          <link rel="stylesheet" crossorigin href="${CLIENT_URL}:3010/dist/assets/index-4JIOBxZ2.css" />
         </head>
         <body>
           <div id="root"></div>
@@ -156,6 +165,13 @@ app.use("/api", widgetStylesRouter);
 app.use("/api", visitorRequestRouter);
 app.use("/api", visitorDetailsRouter);
 app.use("/api", openChatsRouter);
+
+const CLIENT_URL =
+  process.env.NODE_ENV === "production"
+    ? process.env.CLIENT_PROD_URL
+    : process.env.CLIENT_DEV_URL;
+
+console.log("CURRENT ENVIRONMENT ->", CLIENT_URL);
 
 io.on("connection", (socket) => {
   socket.on("visitor-join", async ({ visitorId, name }) => {

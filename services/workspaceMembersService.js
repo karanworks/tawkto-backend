@@ -118,6 +118,11 @@ class WorkspaceMembersService {
           },
         });
 
+        const CLIENT_URL =
+          process.env.NODE_ENV === "production"
+            ? process.env.CLIENT_PROD_URL
+            : process.env.CLIENT_DEV_URL;
+
         sendEmail(
           email,
           "You have been invited to join workspace",
@@ -131,7 +136,7 @@ class WorkspaceMembersService {
       </p>
       <div style="margin-top: 20px; text-align: center">
         <a
-          href="http://localhost:3000/set-password/token/${token}"
+          href="http://${CLIENT_URL}/set-password/token/${token}"
           style="
             display: inline-block;
             padding: 12px 20px;

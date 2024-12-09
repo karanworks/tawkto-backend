@@ -78,7 +78,13 @@ class workspaceMembersController {
       const user = await workspaceMembersService.joinWorkspace(req);
 
       if (user) {
-        res.redirect("http://localhost:3000/login");
+        // res.redirect("http://localhost:3000/login");
+        const URL =
+          process.env.NODE_ENV === "production"
+            ? process.env.CLIENT_PROD_URL
+            : process.env.CLIENT_DEV_URL;
+
+        res.redirect(URL);
         // response.success(res, 201, {
         //   message: "Member joined workspace successfully",
         //   status: "success",

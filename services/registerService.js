@@ -27,11 +27,15 @@ class RegisterService {
     });
 
     const { password: userPassword, ...userWithoutpassword } = user;
+    const CLIENT_URL =
+      process.env.NODE_ENV === "production"
+        ? process.env.CLIENT_PROD_URL
+        : process.env.CLIENT_DEV_URL;
 
     await sendEmail(
       email,
       "Verification mail from tawkto",
-      `<span> Click this link to verify your email -> </span> <a href=http://localhost:3010/api/verify-email?token=${token} target="_blank">Verify Email</a>`
+      `<span> Click this link to verify your email -> </span> <a href=${CLIENT_URL}/api/verify-email?token=${token} target="_blank">Verify Email</a>`
     );
 
     return userWithoutpassword;
