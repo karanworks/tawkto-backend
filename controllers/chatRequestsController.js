@@ -46,6 +46,32 @@ class ChatRequestsController {
       response.error(res, 400);
     }
   }
+  async getChatRequestMessages(req, res) {
+    try {
+      const chatRequest = await ChatRequestsService.getChatRequestMessages(req);
+
+      console.log(
+        "CHAT REQUEST MESSAGES IN GET CHAT REQUEST MESSAGES CONTROLLER ->",
+        chatRequest
+      );
+
+      if (chatRequest) {
+        response.success(res, 200, {
+          message: "Chat request messages fetched successfully",
+          status: "success",
+          data: chatRequest,
+        });
+      } else {
+        response.success(res, 200, {
+          message: "Chat request messages not found",
+          status: "success",
+        });
+      }
+    } catch (error) {
+      console.log("Error while fetching chat request messages ->", error);
+      response.error(res, 400);
+    }
+  }
 }
 
 module.exports = new ChatRequestsController();

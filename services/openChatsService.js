@@ -5,7 +5,7 @@ const getLoggedInUser = require("../utils/getLoggedInUser");
 class ChatRequestsService {
   async getOpenChats(req) {
     try {
-      const { agentId } = req.params;
+      const { agentId, workspaceId } = req.params;
 
       const chatRequests = await prisma.chat.findMany({
         where: {
@@ -14,6 +14,7 @@ class ChatRequestsService {
               userId: agentId,
             },
           },
+          workspaceId,
         },
       });
 
@@ -33,6 +34,36 @@ class ChatRequestsService {
       );
 
       return chatWithMessages;
+    } catch (error) {
+      console.log("ERROR ->", error);
+
+      throw new Error("Error while getting open chat ->", error);
+    }
+  }
+  async getOpenChatMessages(req) {
+    try {
+      const { chatId } = req.params;
+
+      const chatRequest = await prisma.chat.findFirst({
+        where: {
+          id: chatId,
+        },
+      });
+
+      console.log("FOUND CHAT ID ->", chatId);
+
+      console.log("FOUND OPEN CHAT ->", chatRequest);
+
+      const messages = await prisma.message.findMany({
+        where: {
+          chatId: chatRequest.id,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+      return { ...chatRequest, messages };
     } catch (error) {
       console.log("ERROR ->", error);
 

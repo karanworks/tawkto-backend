@@ -34,7 +34,7 @@ class RegisterService {
 
     await sendEmail(
       email,
-      "Verification mail from tawkto",
+      "Verification mail from WebWers Team",
       `<span> Click this link to verify your email -> </span> <a href=${CLIENT_URL}/api/verify-email?token=${token} target="_blank">Verify Email</a>`
     );
 

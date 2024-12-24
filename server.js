@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
 const { v4 } = require("uuid");
+const fs = require("fs");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -25,12 +26,22 @@ const openChatsRouter = require("./routes/openChatsRouter");
 
 const app = express();
 
-const server = http.createServer(app);
+// Load SSL certificate and key
+const options = {
+  key: fs.readFileSync("/etc/letsencrypt/live/ascentconnect.in/privkey.pem"),
+  cert: fs.readFileSync("/etc/letsencrypt/live/ascentconnect.in/fullchain.pem"),
+  hostname: "ascent-bpo.com",
+  port: 443,
+};
+
+const server = http.createServer(options, app);
+// const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    credentials: true,
   },
 });
 
@@ -40,10 +51,12 @@ app.use(
   cors({
     // origin: "http://192.168.1.159:3000",
     origin: [
+      "https://ascent-bpo.com",
       "http://localhost:3000",
       "http://127.0.0.1:5500",
       "http://localhost:5173",
       "http://192.168.1.222",
+      "http://192.168.1.200",
     ],
     // origin: "http://127.0.0.1:5500",
     // origin: "http://192.168.1.74:3000",
@@ -53,10 +66,13 @@ app.use(
 );
 
 const allowedOrigins = [
+  "https://ascent-bpo.com",
+  "https://www.ascent-bpo.com",
   "http://localhost:3000",
   "http://127.0.0.1:5500",
   "http://localhost:5173",
   "http://192.168.1.222",
+  "http://192.168.1.200",
 ];
 
 app.use((req, res, next) => {
@@ -139,9 +155,9 @@ app.get("/api/widget/:workspaceId", (req, res) => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>Vite + React</title>
   
-          <script type="module" crossorigin src="${CLIENT_URL}:3010/dist/bundle.js"></script>
-          <link rel="stylesheet" crossorigin href="${CLIENT_URL}:3010/dist/assets/index-cA65dY9O.css" />
-          <link rel="stylesheet" crossorigin href="${CLIENT_URL}:3010/dist/assets/index-4JIOBxZ2.css" />
+          <script type="module" crossorigin src="${CLIENT_URL}/dist/bundle.js"></script>
+          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-cA65dY9O.css" />
+          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-4JIOBxZ2.css" />
         </head>
         <body>
           <div id="root"></div>
@@ -174,21 +190,22 @@ const CLIENT_URL =
 console.log("CURRENT ENVIRONMENT ->", CLIENT_URL);
 
 io.on("connection", (socket) => {
-  socket.on("visitor-join", async ({ visitorId, name }) => {
-    socket.data.visitorId = visitorId;
-    socket.data.role = "visitor";
-
+  socket.on("visitor-join", async ({ visitorId, name, email }) => {
     const visitor = await prisma.visitor.findFirst({
       where: {
         visitorId,
       },
     });
 
+    socket.data.visitorId = visitorId;
+    socket.data.role = "visitor";
+
     if (!visitor) {
       await prisma.visitor.create({
         data: {
           visitorId,
           name,
+          // email,
         },
       });
     }
@@ -305,6 +322,8 @@ io.on("connection", (socket) => {
 
       io.to(workspaceId).emit("joined-conversation", { agentId, chatId });
 
+      socket.emit("joined-conversation", { agentId, chatId });
+
       console.log("WORKSPACE ID ON JOIN CONVERSATION ->", workspaceId);
     }
   );
@@ -312,6 +331,12 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("A User Disconnected ->", socket.id);
   });
+});
+
+io.engine.on("connection_error", (err) => {
+  console.log("SOCKET ERROR 1 ->", err.code); // 3
+  console.log("SOCKET ERROR 2 ->", err.message); // "Bad request"
+  console.log("SOCKET ERROR 3 ->", err.context); // { name: 'TRANSPORT_MISMATCH', transport: 'websocket', previousTransport: 'polling' }
 });
 
 server.listen(process.env.PORT, () => {

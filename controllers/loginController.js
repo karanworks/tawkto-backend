@@ -23,6 +23,9 @@ class LoginController {
           res.cookie("token", user.token, {
             expires: expirationDate,
             httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            domain: "ascentconnect.in",
           });
 
           const menus = await getMenus(req, res, user);

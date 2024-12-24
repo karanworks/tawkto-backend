@@ -4,10 +4,10 @@ const getLoggedInUser = require("../utils/getLoggedInUser");
 
 class WorkspaceService {
   async createWorkspace(req) {
-    const { websiteAddress, workspaceName } = req.body;
-    const loggedInUser = await getLoggedInUser(req);
-
     try {
+      const { websiteAddress, workspaceName } = req.body;
+      const loggedInUser = await getLoggedInUser(req);
+
       const workspace = await prisma.workspace.create({
         data: {
           website: websiteAddress,

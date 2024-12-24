@@ -46,7 +46,10 @@ class ChatRequestsService {
   }
   async getChatRequests(req) {
     try {
-      const { agentId } = req.params;
+      const { agentId, workspaceId } = req.params;
+
+      console.log("AGENT ID ->", agentId);
+      console.log("WORKSPACE ID ->", workspaceId);
 
       // fetching user to check his role
       const user = await prisma.user.findFirst({
@@ -62,6 +65,7 @@ class ChatRequestsService {
               userId: agentId,
             },
           },
+          workspaceId,
         },
       });
 
@@ -95,6 +99,33 @@ class ChatRequestsService {
       );
 
       return chatWithMessages;
+    } catch (error) {
+      console.log("ERROR ->", error);
+
+      throw new Error("Error while getting chat requests ->", error);
+    }
+  }
+  async getChatRequestMessages(req) {
+    try {
+      const { chatId } = req.params;
+      console.log("CHAT REQUEST ->", chatId);
+
+      const chatRequest = await prisma.chat.findFirst({
+        where: {
+          id: chatId,
+        },
+      });
+
+      const messages = await prisma.message.findMany({
+        where: {
+          chatId: chatRequest.id,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+      return { ...chatRequest, messages };
     } catch (error) {
       console.log("ERROR ->", error);
 

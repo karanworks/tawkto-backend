@@ -48,6 +48,7 @@ class RegisterController {
           });
 
           res.send("<h3>Email verified successfully! Now you can login</h3>");
+          // res.redirect("https://ascent-bpo.com/login");
         }
       }
     } catch (error) {

@@ -3,8 +3,12 @@ const chatRequestRouter = express.Router({ mergeParams: true });
 const chatRequestController = require("../controllers/chatRequestsController");
 
 chatRequestRouter.get(
-  "/chat-requests/:agentId",
+  "/chat-requests/:workspaceId/:agentId",
   chatRequestController.getChatRequests
+);
+chatRequestRouter.get(
+  "/chat-request/:chatId",
+  chatRequestController.getChatRequestMessages
 );
 chatRequestRouter.post(
   "/chat-request",
