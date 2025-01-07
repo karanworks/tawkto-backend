@@ -9,9 +9,18 @@ class LoginController {
     try {
       const user = await loginService.login(req.body);
 
+      if (user.error) {
+        console.log("GOT THE ERROR HERE ->", user.error);
+
+        return response.error(res, 200, {
+          message: user.error,
+          status: "failure",
+        });
+      }
+
       if (user) {
         if (!user.isVerified) {
-          response.error(res, 400, {
+          return response.error(res, 400, {
             message: "Please verify your email",
             status: "failure",
           });
@@ -36,12 +45,13 @@ class LoginController {
             data: { ...user, menus },
           });
         }
-      } else {
-        response.error(res, 400, {
-          message: "Invalid Email Or Password",
-          status: "failure",
-        });
       }
+      //  else {
+      //   response.error(res, 400, {
+      //     message: "Invalid Email Or Password",
+      //     status: "failure",
+      //   });
+      // }
     } catch (error) {
       console.log("Error while login ->", error);
       response.error(res, 400);

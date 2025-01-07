@@ -29,7 +29,26 @@ class ChatRequestsService {
             },
           });
 
-          return { ...chat, messages };
+          const visitor = await prisma.visitor.findFirst({
+            where: {
+              id: chat.visitorId,
+            },
+          });
+
+          const status = await prisma.visitorStatus.findFirst({
+            where: {
+              visitorId: visitor.id,
+              chatId: chat.id,
+              workspaceId: chat.workspaceId,
+            },
+          });
+
+          return {
+            ...chat,
+            messages,
+            visitor,
+            status: { visitor, status: status.status },
+          };
         })
       );
 
@@ -50,9 +69,19 @@ class ChatRequestsService {
         },
       });
 
-      console.log("FOUND CHAT ID ->", chatId);
+      const visitor = await prisma.visitor.findFirst({
+        where: {
+          id: chatRequest.visitorId,
+        },
+      });
 
-      console.log("FOUND OPEN CHAT ->", chatRequest);
+      const status = await prisma.visitorStatus.findFirst({
+        where: {
+          visitorId: visitor.id,
+          chatId,
+          workspaceId: chatRequest.workspaceId,
+        },
+      });
 
       const messages = await prisma.message.findMany({
         where: {
@@ -63,7 +92,12 @@ class ChatRequestsService {
         },
       });
 
-      return { ...chatRequest, messages };
+      return {
+        ...chatRequest,
+        messages,
+        visitor,
+        status: { visitor, status: status.status },
+      };
     } catch (error) {
       console.log("ERROR ->", error);
 

@@ -47,23 +47,49 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-app.use(
-  cors({
-    // origin: "http://192.168.1.159:3000",
-    origin: [
-      "https://ascent-bpo.com",
-      "http://localhost:3000",
-      "http://127.0.0.1:5500",
-      "http://localhost:5173",
-      "http://192.168.1.222",
-      "http://192.168.1.200",
-    ],
-    // origin: "http://127.0.0.1:5500",
-    // origin: "http://192.168.1.74:3000",
-    credentials: true,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-  })
-);
+// app.use(
+//   cors({
+//     // origin: "http://192.168.1.159:3000",
+//     // origin: [
+//     //   "https://ascent-bpo.com",
+//     //   "http://localhost:3000",
+//     //   "https://asiwallegal.com",
+//     //   "http://127.0.0.1:5500",
+//     //   "http://localhost:5173",
+//     //   "http://192.168.1.222",
+//     //   "http://192.168.1.200",
+//     // ],
+//     // origin: "http://127.0.0.1:5500",
+//     // origin: "http://192.168.1.74:3000",
+//     origin: "*",
+//     credentials: true,
+//     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+//   })
+// );
+app.use(async (req, res, next) => {
+  try {
+    const allWorkspaces = await prisma.workspace.findMany({});
+
+    const allowedOrigins = allWorkspaces.map(
+      (workspace) => "https://" + workspace.website
+    );
+
+    cors({
+      origin: [
+        ...allowedOrigins,
+        "http://127.0.0.1:5500",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://ascent-bpo.com",
+      ],
+      credentials: true,
+      methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    })(req, res, next);
+  } catch (error) {
+    console.error("Error while fetching workspaces for CORS ->", error);
+    next(error);
+  }
+});
 
 const allowedOrigins = [
   "https://ascent-bpo.com",
@@ -85,7 +111,7 @@ app.use((req, res, next) => {
   // res.setHeader("Access-Control-Allow-Origin", "http://192.168.1.74:3000");
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, PUT, POST, PATCH, DELETE"
+    "GET, PUT, POST, PATCH, DELETE, OPTIONS"
   );
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
@@ -96,6 +122,16 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, "/")));
+// app.use(express.static(path.join(__dirname)));
+
+// app.use(
+//   "/dist",
+//   express.static(path.join(__dirname, "/"), {
+//     setHeaders: (res) => {
+//       res.setHeader("Access-Control-Allow-Origin", "*");
+//     },
+//   })
+// );
 
 app.use(cookieParser());
 
@@ -111,10 +147,17 @@ app.get("/", (req, res) => {
 app.get("/api/widget/:workspaceId", (req, res) => {
   const workspaceId = req.params.workspaceId;
 
+  // const CLIENT_URL =
+  //   process.env.NODE_ENV === "production"
+  //     ? process.env.CLIENT_PROD_URL
+  //     : process.env.CLIENT_DEV_URL;
+
+  const normalizeUrl = (url) => url.replace(/\/+$/, ""); // Remove trailing slashes from the base URL
+
   const CLIENT_URL =
     process.env.NODE_ENV === "production"
-      ? process.env.CLIENT_PROD_URL
-      : process.env.CLIENT_DEV_URL;
+      ? normalizeUrl(process.env.CLIENT_PROD_URL)
+      : normalizeUrl(process.env.CLIENT_DEV_URL);
 
   res.setHeader("Content-Type", "application/javascript");
   res.send(`
@@ -157,7 +200,9 @@ app.get("/api/widget/:workspaceId", (req, res) => {
   
           <script type="module" crossorigin src="${CLIENT_URL}/dist/bundle.js"></script>
           <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-cA65dY9O.css" />
+          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-DRhaNR9W.css" />
           <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-4JIOBxZ2.css" />
+          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-Cd8DEvh9.css" />
         </head>
         <body>
           <div id="root"></div>
@@ -190,36 +235,55 @@ const CLIENT_URL =
 console.log("CURRENT ENVIRONMENT ->", CLIENT_URL);
 
 io.on("connection", (socket) => {
-  socket.on("visitor-join", async ({ visitorId, name, email }) => {
-    const visitor = await prisma.visitor.findFirst({
-      where: {
-        visitorId,
-      },
-    });
+  socket.on("visitor-join", async ({ id, name, email, workspaceId }) => {
+    try {
+      let visitor;
 
-    socket.data.visitorId = visitorId;
-    socket.data.role = "visitor";
+      if (id) {
+        visitor = await prisma.visitor.findFirst({
+          where: {
+            id,
+          },
+        });
+      }
 
-    if (!visitor) {
-      await prisma.visitor.create({
-        data: {
-          visitorId,
-          name,
-          // email,
+      if (!visitor) {
+        visitor = await prisma.visitor.create({
+          data: {
+            name,
+            email,
+          },
+        });
+
+        socket.emit("visitor-joined", visitor);
+      }
+
+      const chat = await prisma.chat.findFirst({
+        where: {
+          visitorId: visitor.id,
         },
       });
+
+      if (chat) {
+        socket.data.chatId = chat.id;
+      }
+
+      socket.data.workspaceId = workspaceId;
+      socket.data.visitorId = visitor.id;
+      socket.data.role = "visitor";
+
+      socket.join(visitor.id);
+
+      console.log("VISITOR JOINED", socket.id);
+    } catch (error) {
+      console.log("Error inside visitor-join event ->", error);
     }
-
-    socket.join(visitorId);
-
-    console.log("VISITOR JOINED", socket.id);
   });
 
   socket.on("agent-join", ({ agentId, workspaceId }) => {
     socket.data.role = "agent";
     socket.data.agentId = agentId;
     socket.join(workspaceId);
-    console.log("WORKSPACE ->", workspaceId);
 
     console.log("AGENT JOINED", socket.id);
   });
@@ -231,9 +295,13 @@ io.on("connection", (socket) => {
         let chat = await prisma.chat.findFirst({
           where: {
             workspaceId,
-            visitorId: visitor.visitorId,
+            visitorId: visitor.id,
           },
         });
+
+        if (chat) {
+          socket.data.chatId = chat.id;
+        }
 
         let chatAssign;
 
@@ -241,22 +309,21 @@ io.on("connection", (socket) => {
           chat = await prisma.chat.create({
             data: {
               workspaceId,
-              visitorId: visitor.visitorId,
+              visitorId: visitor.id,
             },
           });
           chatAssign = await prisma.chatAssign.create({
             data: {
               chatId: chat.id,
-              userId: visitor.visitorId,
+              userId: visitor.id,
             },
           });
+          socket.data.chatId = chat.id;
         }
 
-        callback({
-          visitor,
-          ...chat,
-          chatId: chat.id,
-        });
+        socket.data.workspaceId = workspaceId;
+
+        callback(chat);
 
         socket.to(workspaceId).emit("visitor-message-request", {
           visitor,
@@ -270,66 +337,168 @@ io.on("connection", (socket) => {
           chatId: chat.id,
         });
       } catch (error) {
-        console.log("Error in Visitor Message Request ->", error);
+        console.log("Error in Visitor Message Request event ->", error);
       }
     }
   );
 
   socket.on("message", async ({ message, chatId, sender, to }) => {
-    const chat = await prisma.chat.findFirst({
-      where: {
-        id: chatId,
-      },
-    });
+    try {
+      console.log("CHAT ID IN MESSAGE ->", chatId);
 
-    const newMessage = await prisma.message.create({
-      data: {
-        chatId,
-        content: message.content,
-        sender,
-      },
-    });
+      const chat = await prisma.chat.findFirst({
+        where: {
+          id: chatId,
+        },
+      });
 
-    if (socket.data.role === "visitor") {
-      console.log("WORKSPACE ->", io.sockets.adapter.rooms);
+      const newMessage = await prisma.message.create({
+        data: {
+          chatId,
+          content: message.content,
+          sender,
+        },
+      });
 
-      io.to(socket.id).emit("message", newMessage);
-      io.to(to).emit("message", newMessage);
-    } else if (socket.data.role === "agent") {
-      io.to(to).emit("message", newMessage);
-      io.to(chat.workspaceId).emit("message", newMessage);
+      if (socket.data.role === "visitor") {
+        io.to(socket.id).emit("message", newMessage);
+        io.to(to).emit("message", newMessage);
+      } else if (socket.data.role === "agent") {
+        io.to(to).emit("message", newMessage);
+        io.to(chat.workspaceId).emit("message", newMessage);
+      }
+    } catch (error) {
+      console.log("Error in message event ->", error);
     }
   });
 
   socket.on(
     "join-conversation",
     async ({ agentId, chatId, visitorId, workspaceId }) => {
-      await prisma.chat.update({
-        where: {
-          id: chatId,
-        },
-        data: {
-          accepted: true,
-        },
-      });
+      try {
+        await prisma.chat.update({
+          where: {
+            id: chatId,
+          },
+          data: {
+            accepted: true,
+          },
+        });
 
-      await prisma.chatAssign.create({
-        data: {
-          chatId: chatId,
-          userId: agentId,
-        },
-      });
+        await prisma.chatAssign.create({
+          data: {
+            chatId: chatId,
+            userId: agentId,
+          },
+        });
 
-      io.to(workspaceId).emit("joined-conversation", { agentId, chatId });
+        io.to(workspaceId).emit("joined-conversation", { agentId, chatId });
 
-      socket.emit("joined-conversation", { agentId, chatId });
-
-      console.log("WORKSPACE ID ON JOIN CONVERSATION ->", workspaceId);
+        socket.emit("joined-conversation", { agentId, chatId });
+      } catch (error) {
+        console.log("Error in join conversation event ->", error);
+      }
     }
   );
 
-  socket.on("disconnect", () => {
-    console.log("A User Disconnected ->", socket.id);
+  socket.on("chat-widget-state", async (widgetState) => {
+    try {
+      socket
+        .to(widgetState.workspaceId)
+        .emit("visitor-chat-widget-state", widgetState);
+      socket.to(socket.id).emit("visitor-chat-widget-state", widgetState);
+    } catch (error) {
+      console.log("Error in chat widget state event ->", error);
+    }
+  });
+
+  socket.on("visitor-status", async (status, workspaceId) => {
+    try {
+      const { chatId } = socket.data;
+
+      const statusAlreadyExist = await prisma.visitorStatus.findFirst({
+        where: {
+          workspaceId,
+          visitorId: status.visitor.id,
+          chatId,
+        },
+      });
+
+      if (!statusAlreadyExist) {
+        await prisma.visitorStatus.create({
+          data: {
+            workspaceId,
+            visitorId: status.visitor.id,
+            chatId,
+            status: status.status,
+          },
+        });
+      } else {
+        await prisma.visitorStatus.update({
+          where: {
+            id: statusAlreadyExist.id,
+          },
+          data: {
+            status: status.status,
+          },
+        });
+      }
+
+      io.to(socket.id).emit("visitor-status-update", status);
+      io.to(workspaceId).emit("visitor-status-update", status);
+
+      console.log("A USER IS ONLINE!");
+    } catch (error) {
+      console.log("error in visitor status event ->", error);
+    }
+  });
+
+  socket.on("disconnect", async () => {
+    try {
+      const { visitorId, chatId, workspaceId } = socket.data;
+
+      const visitor = await prisma.visitor.findFirst({
+        where: {
+          id: visitorId,
+        },
+      });
+
+      const visitorStatus = await prisma.visitorStatus.findFirst({
+        where: {
+          visitorId,
+          chatId,
+          workspaceId,
+        },
+      });
+
+      if (visitorStatus) {
+        await prisma.visitorStatus.update({
+          where: {
+            id: visitorStatus.id,
+          },
+          data: {
+            status: "offline",
+          },
+        });
+      }
+
+      console.log("VISITOR STATUS ->", {
+        visitor: { ...visitor, chatId },
+        status: "offline",
+      });
+
+      io.to(socket.id).emit("visitor-status-update", {
+        visitor: { ...visitor, chatId },
+        status: "offline",
+      });
+      io.to(workspaceId).emit("visitor-status-update", {
+        visitor: { ...visitor, chatId },
+        status: "offline",
+      });
+      console.log("A User Disconnected ->", socket.id);
+    } catch (error) {
+      console.log("error on disconnect event ->", error);
+    }
   });
 });
 
@@ -337,6 +506,12 @@ io.engine.on("connection_error", (err) => {
   console.log("SOCKET ERROR 1 ->", err.code); // 3
   console.log("SOCKET ERROR 2 ->", err.message); // "Bad request"
   console.log("SOCKET ERROR 3 ->", err.context); // { name: 'TRANSPORT_MISMATCH', transport: 'websocket', previousTransport: 'polling' }
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR HANDLER ->", err.stack);
+  res.status(500).send("Internal Server Error");
 });
 
 server.listen(process.env.PORT, () => {

@@ -48,8 +48,6 @@ class ChatRequestsService {
     try {
       const { agentId, workspaceId } = req.params;
 
-      console.log("AGENT ID ->", agentId);
-      console.log("WORKSPACE ID ->", workspaceId);
 
       // fetching user to check his role
       const user = await prisma.user.findFirst({
@@ -94,7 +92,26 @@ class ChatRequestsService {
             },
           });
 
-          return { ...chat, messages };
+          const visitor = await prisma.visitor.findFirst({
+            where: {
+              id: chat.visitorId,
+            },
+          });
+
+          const status = await prisma.visitorStatus.findFirst({
+            where: {
+              visitorId: visitor.id,
+              chatId: chat.id,
+              workspaceId: chat.workspaceId,
+            },
+          });
+
+          return {
+            ...chat,
+            messages,
+            visitor,
+            status: { visitor, status: status.status },
+          };
         })
       );
 
@@ -108,11 +125,24 @@ class ChatRequestsService {
   async getChatRequestMessages(req) {
     try {
       const { chatId } = req.params;
-      console.log("CHAT REQUEST ->", chatId);
 
       const chatRequest = await prisma.chat.findFirst({
         where: {
           id: chatId,
+        },
+      });
+
+      const visitor = await prisma.visitor.findFirst({
+        where: {
+          id: chatRequest.visitorId,
+        },
+      });
+
+      const status = await prisma.visitorStatus.findFirst({
+        where: {
+          visitorId: visitor.id,
+          chatId,
+          workspaceId: chatRequest.workspaceId,
         },
       });
 
@@ -125,7 +155,12 @@ class ChatRequestsService {
         },
       });
 
-      return { ...chatRequest, messages };
+      return {
+        ...chatRequest,
+        messages,
+        visitor,
+        status: { visitor, status: status.status },
+      };
     } catch (error) {
       console.log("ERROR ->", error);
 

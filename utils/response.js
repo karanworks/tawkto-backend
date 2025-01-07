@@ -15,8 +15,6 @@ class Response {
     try {
       return res.status(statusCode || 400).json(this.handleError(data));
     } catch (error) {
-      console.log("ERROR IN ERROR RESPONSE ->", error);
-
       return res.status(400).json({
         message: "Implementation Error",
       });

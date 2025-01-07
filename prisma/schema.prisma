@@ -126,7 +126,7 @@ model Message{
 model visitor {
    id String   @id @default(uuid())
    name String
-   visitorId String
+   email String @unique
    createdAt DateTime @default(now())
    updatedAt DateTime @default(now())
 }
@@ -140,3 +140,12 @@ model WidgetStyles{
 
 }
 
+model VisitorStatus {
+  id String   @id @default(uuid())
+  workspaceId String
+  visitorId String
+  chatId String
+  status String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}

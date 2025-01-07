@@ -6,22 +6,29 @@ const prisma = new PrismaClient();
 class RegisterController {
   async register(req, res) {
     try {
-      const user = RegisterService.register(req.body);
+      const result = await RegisterService.register(req.body);
 
-      if (user) {
-        response.success(res, 201, {
+      if (result?.error) {
+        return response.error(res, 200, {
+          message: result.error,
+          status: "failure",
+        });
+      }
+
+      if (result) {
+        return response.success(res, 201, {
           message: "User registered successfully, Please verify your email",
           status: "success",
         });
       } else {
-        response.error(res, 400, {
+        return response.error(res, 400, {
           message: "There was some error while registering the user",
           status: "failure",
         });
       }
     } catch (error) {
       console.log("Error while registering ->", error);
-      response.error(res, 400);
+      response.error(res, 500);
     }
   }
 
@@ -53,7 +60,7 @@ class RegisterController {
       }
     } catch (error) {
       console.log("Error while verifying email ->", error);
-      response.error(res, 400);
+      response.error(res, 500);
     }
   }
 }

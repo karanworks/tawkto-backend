@@ -50,11 +50,6 @@ class ChatRequestsController {
     try {
       const chatRequest = await ChatRequestsService.getChatRequestMessages(req);
 
-      console.log(
-        "CHAT REQUEST MESSAGES IN GET CHAT REQUEST MESSAGES CONTROLLER ->",
-        chatRequest
-      );
-
       if (chatRequest) {
         response.success(res, 200, {
           message: "Chat request messages fetched successfully",
