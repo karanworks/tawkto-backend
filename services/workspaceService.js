@@ -8,6 +8,18 @@ class WorkspaceService {
       const { websiteAddress, workspaceName } = req.body;
       const loggedInUser = await getLoggedInUser(req);
 
+      const alreadyExists = await prisma.workspace.findFirst({
+        where: {
+          website: websiteAddress,
+        },
+      });
+
+      console.log("WEBSITE ALREADY EXIST CHECK ->", alreadyExists);
+
+      if (alreadyExists) {
+        return { error: "Website is already registered" };
+      }
+
       const workspace = await prisma.workspace.create({
         data: {
           website: websiteAddress,

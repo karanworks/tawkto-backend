@@ -25,6 +25,7 @@ async function getMenus(req, res, user) {
       id: {
         in: submenuIds,
       },
+      status: 1,
     },
   });
 

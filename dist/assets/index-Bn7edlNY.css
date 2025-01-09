@@ -1,4 +1,22 @@
 @import "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap";
+.chat-messages {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: #25a0e2 #f1f1f1;
+}
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: #25a0e2;
+  border-radius: 4px;
+}
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background-color: #1a8ab1;
+}
 .chat-container {
   position: fixed;
   bottom: 1rem;
@@ -51,6 +69,10 @@
   font-weight: 600;
   font-size: 0.875rem;
 }
+.chat-header-heading {
+  font-size: 20px;
+  color: #474747;
+}
 .chat-controls {
   display: flex;
   gap: 0.25rem;
@@ -80,7 +102,7 @@
 .message-wrapper {
   display: flex;
 }
-.message-wrapper.user {
+.message-wrapper.visitor {
   justify-content: flex-end;
 }
 .message {
@@ -89,7 +111,7 @@
   border-radius: 0.5rem;
   background-color: #f3f4f6;
 }
-.message-wrapper.user .message {
+.message-wrapper.visitor .message {
   background-color: #3ba9e5;
   color: #fff;
 }
@@ -121,4 +143,63 @@
 }
 .chat-input-form button:hover {
   background-color: #3ba9e5;
+}
+.wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.main-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 90%;
+  padding: 20px;
+  border-radius: 10px;
+}
+.heading {
+  font-size: 21px;
+  color: #474747;
+  margin-bottom: 20px;
+}
+.error-message {
+  color: red;
+  margin-bottom: 5px;
+}
+.form-container {
+  width: "100%";
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #474747;
+  width: 100%;
+}
+.input-field {
+  height: 38px;
+  border-radius: 5px;
+  border: 1px solid #b1b1b1;
+  padding-inline: 10px;
+}
+.input-field::placeholder {
+  color: #b1b1b1;
+}
+.start-chat-btn {
+  width: 120px;
+  height: 35px;
+  background-color: #3ba9e5;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 15px;
 }

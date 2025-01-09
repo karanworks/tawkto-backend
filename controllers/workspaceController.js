@@ -8,7 +8,14 @@ class workspaceController {
     try {
       const workspace = await WorkspaceService.createWorkspace(req);
 
-      if (workspace) {
+      if (workspace.error) {
+        return response.error(res, 200, {
+          message: workspace.error,
+          status: "failure",
+        });
+      }
+
+      if (workspace && !workspace.error) {
         response.success(res, 201, {
           message: "Workspace created successfully",
           status: "success",

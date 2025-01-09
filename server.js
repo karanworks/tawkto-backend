@@ -4,7 +4,6 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
-const { v4 } = require("uuid");
 const fs = require("fs");
 
 //Prisma
@@ -23,6 +22,7 @@ const widgetStylesRouter = require("./routes/widgetStylesRouter");
 const visitorRequestRouter = require("./routes/chatRequestsRouter");
 const visitorDetailsRouter = require("./routes/visitorDetailsRouter");
 const openChatsRouter = require("./routes/openChatsRouter");
+const widgetStatusRouter = require("./routes/widgetStatusRouter");
 
 const app = express();
 
@@ -70,9 +70,7 @@ app.use(async (req, res, next) => {
   try {
     const allWorkspaces = await prisma.workspace.findMany({});
 
-    const allowedOrigins = allWorkspaces.map(
-      (workspace) => "https://" + workspace.website
-    );
+    const allowedOrigins = allWorkspaces.map((workspace) => workspace.website);
 
     cors({
       origin: [
@@ -172,6 +170,15 @@ app.get("/api/widget/:workspaceId", (req, res) => {
       iframeElement.classList.add("iframe-target");
       iframeElement.src = "about:blank";
 
+      window.addEventListener("message", (event) => {
+  if (event.data?.type === "resizeIframe" && event.data.height) {
+
+  console.log("IFRAME HEIGHT ->", event.data.height, event.data.width)
+    iframeElement.style.height = event.data.height;
+    iframeElement.style.width = event.data.width;
+  }
+});
+
       const style = document.createElement("style");
       style.innerHTML = \`
         .iframe-target {
@@ -180,8 +187,7 @@ app.get("/api/widget/:workspaceId", (req, res) => {
           bottom: 0;
           z-index: 9999;
           border: none;
-          width: 350px;
-          height: 100%;
+          background: none !important;
         }\`;
 
       document.head.appendChild(style);
@@ -196,13 +202,9 @@ app.get("/api/widget/:workspaceId", (req, res) => {
         <head>
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Vite + React</title>
-  
+          <title>Webwers</title>
           <script type="module" crossorigin src="${CLIENT_URL}/dist/bundle.js"></script>
-          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-cA65dY9O.css" />
-          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-DRhaNR9W.css" />
-          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-4JIOBxZ2.css" />
-          <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-Cd8DEvh9.css" />
+           <link rel="stylesheet" crossorigin href="${CLIENT_URL}/dist/assets/index-hhK3uYej.css" />
         </head>
         <body>
           <div id="root"></div>
@@ -226,6 +228,7 @@ app.use("/api", widgetStylesRouter);
 app.use("/api", visitorRequestRouter);
 app.use("/api", visitorDetailsRouter);
 app.use("/api", openChatsRouter);
+app.use("/api", widgetStatusRouter);
 
 const CLIENT_URL =
   process.env.NODE_ENV === "production"
@@ -303,8 +306,6 @@ io.on("connection", (socket) => {
           socket.data.chatId = chat.id;
         }
 
-        let chatAssign;
-
         if (!chat) {
           chat = await prisma.chat.create({
             data: {
@@ -341,6 +342,26 @@ io.on("connection", (socket) => {
       }
     }
   );
+
+  socket.on("typing", ({ user }) => {
+    console.log("THIS USER IS TYPING", user);
+
+    let targetVisitor = null;
+
+    if (user.type === "agent") {
+      io.sockets.sockets.forEach((s) => {
+        if (s.data.visitorId === user.visitorId) {
+          targetVisitor = s.id;
+        }
+      });
+
+      io.to(targetVisitor).emit("typing", user);
+    }
+
+    if (user.type === "visitor") {
+      io.to(user.workspaceId).emit("typing", user);
+    }
+  });
 
   socket.on("message", async ({ message, chatId, sender, to }) => {
     try {
