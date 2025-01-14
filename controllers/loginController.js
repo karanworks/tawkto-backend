@@ -33,8 +33,8 @@ class LoginController {
             expires: expirationDate,
             httpOnly: true,
             secure: true,
-            sameSite: "none",
-            domain: "ascentconnect.in",
+            sameSite: true,
+            domain: "ascent-bpo.com",
           });
 
           const menus = await getMenus(req, res, user);

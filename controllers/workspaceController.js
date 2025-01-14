@@ -44,7 +44,7 @@ class workspaceController {
         });
       } else {
         response.success(res, 200, {
-          message: "Worksapce not found",
+          message: "Workspace not found",
           status: "success",
         });
       }

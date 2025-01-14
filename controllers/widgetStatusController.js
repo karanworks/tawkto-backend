@@ -8,6 +8,8 @@ class WidgetStatusController {
     try {
       const workspace = await WidgetStatusService.updateWidgetStatus(req);
 
+      console.log("ERROR WHILE UPDATING WORKSPACE STATUS -> ->", workspace);
+
       if (workspace.error) {
         return response.error(res, 200, {
           message: workspace.error,

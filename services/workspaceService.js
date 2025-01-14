@@ -8,13 +8,13 @@ class WorkspaceService {
       const { websiteAddress, workspaceName } = req.body;
       const loggedInUser = await getLoggedInUser(req);
 
+      console.log("LOGGED IN USER ->", loggedInUser);
+
       const alreadyExists = await prisma.workspace.findFirst({
         where: {
           website: websiteAddress,
         },
       });
-
-      console.log("WEBSITE ALREADY EXIST CHECK ->", alreadyExists);
 
       if (alreadyExists) {
         return { error: "Website is already registered" };
@@ -51,6 +51,8 @@ class WorkspaceService {
 
       return workspace;
     } catch (error) {
+      console.log("Error while creating workspace ->", error);
+
       throw new Error("Error while creating workspace ->", error);
     }
   }
@@ -58,24 +60,23 @@ class WorkspaceService {
     try {
       const { userId } = req.params;
 
-      // const workspaces = await prisma.workspace.findFirst({
-      //   where: {
-      //     createdBy: userId,
-      //   },
-      // });
       const workspaceMember = await prisma.workspaceMembers.findFirst({
         where: {
           memberId: userId,
         },
       });
 
-      const workspaces = await prisma.workspace.findFirst({
-        where: {
-          id: workspaceMember.workspaceId,
-        },
-      });
+      if (workspaceMember) {
+        const workspaces = await prisma.workspace.findFirst({
+          where: {
+            id: workspaceMember.workspaceId,
+          },
+        });
 
-      return workspaces;
+        return workspaces;
+      } else {
+        return null;
+      }
     } catch (error) {
       console.log("ERROR ->", error);
 

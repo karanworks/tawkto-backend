@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const getLoggedInUser = require("../utils/getLoggedInUser");
+const chatStatus = require("../constants/chatStatus");
 
 class ChatRequestsService {
   async createChatRequest(req) {
@@ -48,7 +49,6 @@ class ChatRequestsService {
     try {
       const { agentId, workspaceId } = req.params;
 
-
       // fetching user to check his role
       const user = await prisma.user.findFirst({
         where: {
@@ -69,9 +69,10 @@ class ChatRequestsService {
 
       const filteredRequests = chatRequests
         .map((request) => {
-          if (request.accepted === false) {
+          if (request.status === chatStatus.PENDING) {
+
             return request;
-          } else if (request.accepted === true) {
+          } else if (request.status === chatStatus.ACCEPTED) {
             if (user.roleId === 1) {
               return request;
             } else {

@@ -10,6 +10,11 @@ class workspaceMembersController {
         req
       );
 
+      console.log(
+        "TRYING TO CATCH THE ERROR FOR WORKSPACE MEMBERS ->",
+        workspaceMembers
+      );
+
       if (workspaceMembers) {
         response.success(res, 201, {
           message: "Workspace member invited successfully",

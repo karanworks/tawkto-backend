@@ -43,8 +43,10 @@ class RegisterController {
           },
         });
 
+        console.log("CHECK USER ->", user);
+
         if (user) {
-          await prisma.user.update({
+          const userUpdated = await prisma.user.update({
             where: {
               id: user.id,
             },
@@ -54,7 +56,11 @@ class RegisterController {
             },
           });
 
-          res.send("<h3>Email verified successfully! Now you can login</h3>");
+          console.log("VERIFY EMAIL WORKING ->", userUpdated);
+
+          res.redirect("/login");
+
+          // res.send("<h3>Email verified successfully! Now you can login</h3>");
           // res.redirect("https://ascent-bpo.com/login");
         }
       }

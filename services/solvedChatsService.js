@@ -1,14 +1,51 @@
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 const chatStatus = require("../constants/chatStatus");
+const prisma = new PrismaClient();
 
-class ChatRequestsService {
-  async getOpenChats(req) {
+class SolvedChatService {
+  async updateSolvedChat(req) {
+    try {
+      const { chatId } = req.params;
+      const { status } = req.body;
+
+      console.log("GOT THE STATUS ->", status);
+
+      const solvedChat = await prisma.chat.findFirst({
+        where: {
+          id: chatId,
+        },
+      });
+
+      if (solvedChat) {
+        await prisma.chat.update({
+          where: {
+            id: solvedChat.id,
+          },
+          data: {
+            status: status,
+          },
+        });
+        return solvedChat;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.log("ERROR WHILE CREATING UPDATED CHAT ->", error);
+
+      throw new Error("Error while creating chat chat ->", error);
+    }
+  }
+  async getSolvedChats(req) {
     try {
       const { agentId, workspaceId } = req.params;
 
-      const chatRequests = await prisma.chat.findMany({
+      console.log(
+        "SOLVED CHAT API CALLED TO GET CHATS =>",
+        agentId,
+        workspaceId
+      );
+
+      const solvedChats = await prisma.chat.findMany({
         where: {
           ChatAssign: {
             some: {
@@ -16,12 +53,12 @@ class ChatRequestsService {
             },
           },
           workspaceId,
-          status: chatStatus.ACCEPTED,
+          status: chatStatus.SOLVED,
         },
       });
 
-      const chatWithMessages = await Promise.all(
-        chatRequests.map(async (chat) => {
+      const solvedChatsWithMessages = await Promise.all(
+        solvedChats.map(async (chat) => {
           const messages = await prisma.message.findMany({
             where: {
               chatId: chat.id,
@@ -54,18 +91,18 @@ class ChatRequestsService {
         })
       );
 
-      return chatWithMessages;
+      return solvedChatsWithMessages;
     } catch (error) {
       console.log("ERROR ->", error);
 
       throw new Error("Error while getting open chat ->", error);
     }
   }
-  async getOpenChatMessages(req) {
+  async getSolvedChatMessages(req) {
     try {
       const { chatId } = req.params;
 
-      const chatRequest = await prisma.chat.findFirst({
+      const solvedChat = await prisma.chat.findFirst({
         where: {
           id: chatId,
         },
@@ -73,7 +110,7 @@ class ChatRequestsService {
 
       const visitor = await prisma.visitor.findFirst({
         where: {
-          id: chatRequest.visitorId,
+          id: solvedChat.visitorId,
         },
       });
 
@@ -81,13 +118,13 @@ class ChatRequestsService {
         where: {
           visitorId: visitor.id,
           chatId,
-          workspaceId: chatRequest.workspaceId,
+          workspaceId: solvedChat.workspaceId,
         },
       });
 
       const messages = await prisma.message.findMany({
         where: {
-          chatId: chatRequest.id,
+          chatId: solvedChat.id,
         },
         orderBy: {
           createdAt: "asc",
@@ -95,7 +132,7 @@ class ChatRequestsService {
       });
 
       return {
-        ...chatRequest,
+        ...solvedChat,
         messages,
         visitor,
         status: { visitor, status: status.status },
@@ -108,4 +145,4 @@ class ChatRequestsService {
   }
 }
 
-module.exports = new ChatRequestsService();
+module.exports = new SolvedChatService();

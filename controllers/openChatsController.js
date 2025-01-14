@@ -42,7 +42,7 @@ class OpenChatsController {
         });
       }
     } catch (error) {
-      console.log("Error while fetching open chat ->", error);
+      console.log("Error while fetching open chat messages ->", error);
       response.error(res, 400);
     }
   }

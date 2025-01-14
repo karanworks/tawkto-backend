@@ -23,13 +23,17 @@ const visitorRequestRouter = require("./routes/chatRequestsRouter");
 const visitorDetailsRouter = require("./routes/visitorDetailsRouter");
 const openChatsRouter = require("./routes/openChatsRouter");
 const widgetStatusRouter = require("./routes/widgetStatusRouter");
+const chatStatus = require("./constants/chatStatus");
+const solvedChatsRouter = require("./routes/solvedChatsRouter");
 
 const app = express();
 
 // Load SSL certificate and key
 const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/ascentconnect.in/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/ascentconnect.in/fullchain.pem"),
+  key: fs.readFileSync("/etc/letsencrypt/live/ascent-bpo.com-0001/privkey.pem"),
+  cert: fs.readFileSync(
+    "/etc/letsencrypt/live/ascent-bpo.com-0001/fullchain.pem"
+  ),
   hostname: "ascent-bpo.com",
   port: 443,
 };
@@ -142,8 +146,15 @@ app.get("/", (req, res) => {
 //   res.sendFile(path.join(__dirname, "main.js"));
 // });
 
-app.get("/api/widget/:workspaceId", (req, res) => {
+// localStorage.setItem("workspace","${JSON.stringify(workspace)}");
+
+app.get("/api/widget/:workspaceId", async (req, res) => {
   const workspaceId = req.params.workspaceId;
+  const workspace = await prisma.workspace.findFirst({
+    where: {
+      id: workspaceId,
+    },
+  });
 
   // const CLIENT_URL =
   //   process.env.NODE_ENV === "production"
@@ -160,9 +171,12 @@ app.get("/api/widget/:workspaceId", (req, res) => {
   res.setHeader("Content-Type", "application/javascript");
   res.send(`
     (function (global) {
-      global.$_widget_workspaceId = "${workspaceId}";
-      document.cookie = "widget_workspaceId=${workspaceId}";
-      localStorage.setItem("widget_workspaceId","${workspaceId}");
+      global.$_workspace = "${workspace}";
+      document.cookie = "workspaceId=${workspaceId}";
+      
+      localStorage.setItem("workspace", JSON.stringify(${JSON.stringify(
+        workspace
+      )}));
 
  
 
@@ -228,6 +242,7 @@ app.use("/api", widgetStylesRouter);
 app.use("/api", visitorRequestRouter);
 app.use("/api", visitorDetailsRouter);
 app.use("/api", openChatsRouter);
+app.use("/api", solvedChatsRouter);
 app.use("/api", widgetStatusRouter);
 
 const CLIENT_URL =
@@ -288,13 +303,16 @@ io.on("connection", (socket) => {
     socket.data.agentId = agentId;
     socket.join(workspaceId);
 
-    console.log("AGENT JOINED", socket.id);
+    console.log("ROOMS WHILE AGENT JOINED ->", io.sockets.adapter.rooms);
+
+    console.log("AGENT JOINED", socket.id, "WORKSPACE ID ->", workspaceId);
   });
 
   socket.on(
     "visitor-message-request",
     async ({ workspaceId, visitor }, callback) => {
       try {
+        let messages;
         let chat = await prisma.chat.findFirst({
           where: {
             workspaceId,
@@ -303,6 +321,11 @@ io.on("connection", (socket) => {
         });
 
         if (chat) {
+          messages = await prisma.message.findMany({
+            where: {
+              chatId: chat.id,
+            },
+          });
           socket.data.chatId = chat.id;
         }
 
@@ -320,6 +343,16 @@ io.on("connection", (socket) => {
             },
           });
           socket.data.chatId = chat.id;
+
+          console.log("CHAT ID WHILE TRYING TO GET MESSAGES ->", chat.id);
+
+          messages = await prisma.message.findMany({
+            where: {
+              chatId: chat.id,
+            },
+          });
+
+          console.log("MESSAGES WHEN INITIATING A CHAT ->", messages);
         }
 
         socket.data.workspaceId = workspaceId;
@@ -330,12 +363,14 @@ io.on("connection", (socket) => {
           visitor,
           ...chat,
           chatId: chat.id,
+          messages,
         });
 
         socket.to(socket.id).emit("visitor-message-request", {
           visitor,
           ...chat,
           chatId: chat.id,
+          messages,
         });
       } catch (error) {
         console.log("Error in Visitor Message Request event ->", error);
@@ -402,7 +437,7 @@ io.on("connection", (socket) => {
             id: chatId,
           },
           data: {
-            accepted: true,
+            status: chatStatus.ACCEPTED,
           },
         });
 
@@ -431,6 +466,12 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.log("Error in chat widget state event ->", error);
     }
+  });
+
+  socket.on("widget-connected", (workspace) => {
+    console.log("ROOMS WHEN WIDGET CONNECTED ->", io.sockets.adapter.rooms);
+
+    io.to(workspace.id).emit("widget-connected", workspace);
   });
 
   socket.on("visitor-status", async (status, workspaceId) => {

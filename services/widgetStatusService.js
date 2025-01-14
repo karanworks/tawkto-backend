@@ -1,12 +1,10 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 
 class WidgetStatusService {
   async updateWidgetStatus(req) {
     try {
       const { workspaceId } = req.params;
-      const loggedInUser = await getLoggedInUser(req);
 
       const workspace = await prisma.workspace.findFirst({
         where: {
@@ -23,10 +21,10 @@ class WidgetStatusService {
         },
       });
 
-      console.log("WORKSPACE FOR UPDATING WIDGET STATUS ->", workspace);
-
       return updatedStatus;
     } catch (error) {
+      console.log("ERROR WHILE UPDATING WORKSPACE STATUS ->", error);
+
       throw new Error(
         "Error while udpating widget status in workspace ->",
         error
