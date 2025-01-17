@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
+const path = require("path");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -16,8 +17,6 @@ const loginRouter = require("./routes/loginRouter");
 const workspaceRouter = require("./routes/workspaceRouter");
 const workspaceMembersRouter = require("./routes/workspaceMembersRouter");
 const logoutRouter = require("./routes/logoutRouter");
-const visitorChatRouter = require("./routes/visitorChatRouter");
-const path = require("path");
 const widgetStylesRouter = require("./routes/widgetStylesRouter");
 const visitorRequestRouter = require("./routes/chatRequestsRouter");
 const visitorDetailsRouter = require("./routes/visitorDetailsRouter");
@@ -25,6 +24,8 @@ const openChatsRouter = require("./routes/openChatsRouter");
 const widgetStatusRouter = require("./routes/widgetStatusRouter");
 const chatStatus = require("./constants/chatStatus");
 const solvedChatsRouter = require("./routes/solvedChatsRouter");
+const tourRouter = require("./routes/tourRouter");
+const visitorChatRouter = require("./routes/visitorChatRouter");
 
 const app = express();
 
@@ -244,6 +245,7 @@ app.use("/api", visitorDetailsRouter);
 app.use("/api", openChatsRouter);
 app.use("/api", solvedChatsRouter);
 app.use("/api", widgetStatusRouter);
+app.use("/api", tourRouter);
 
 const CLIENT_URL =
   process.env.NODE_ENV === "production"
@@ -543,11 +545,6 @@ io.on("connection", (socket) => {
           },
         });
       }
-
-      console.log("VISITOR STATUS ->", {
-        visitor: { ...visitor, chatId },
-        status: "offline",
-      });
 
       io.to(socket.id).emit("visitor-status-update", {
         visitor: { ...visitor, chatId },

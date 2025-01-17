@@ -1,6 +1,8 @@
 const response = require("../utils/response");
 const workspaceMembersService = require("../services/workspaceMembersService");
 const { PrismaClient } = require("@prisma/client");
+const Token = require("../utils/token");
+const getMenus = require("../utils/getMenus");
 const prisma = new PrismaClient();
 
 class workspaceMembersController {
@@ -62,9 +64,20 @@ class workspaceMembersController {
       const user = await workspaceMembersService.setPassword(req);
 
       if (user) {
+        const menus = await getMenus(req, res, user);
+        const generatedToken = Token.generateToken({ id: user.id });
+
         response.success(res, 201, {
-          message: "Workspace member invited successfully",
+          message: "Workspace member joined successfully",
           status: "success",
+          data: {
+            user: {
+              ...user,
+              menus,
+              token: generatedToken,
+            },
+            workspace: user.workspace,
+          },
         });
       } else {
         response.error(res, 400, {

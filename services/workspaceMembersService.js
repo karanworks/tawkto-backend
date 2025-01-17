@@ -96,6 +96,7 @@ class WorkspaceMembersService {
             name,
             email,
             roleId: matchingRole.id,
+            isTourCompleted: true,
           },
         });
 
@@ -136,7 +137,7 @@ class WorkspaceMembersService {
       </p>
       <div style="margin-top: 20px; text-align: center">
         <a
-          href="http://${CLIENT_URL}/set-password/token/${token}"
+          href="https://ascent-bpo.com/set-password/token/${token}"
           style="
             display: inline-block;
             padding: 12px 20px;
@@ -176,7 +177,7 @@ class WorkspaceMembersService {
         },
       });
 
-      const updateStatus = await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: {
           id: user.id,
         },
@@ -193,7 +194,13 @@ class WorkspaceMembersService {
         },
       });
 
-      const invitationAccepted = await prisma.workspaceMembers.update({
+      const workspace = await prisma.workspace.findFirst({
+        where: {
+          id: workspaceMember.workspaceId,
+        },
+      });
+
+      await prisma.workspaceMembers.update({
         where: {
           id: workspaceMember.id,
         },
@@ -202,7 +209,9 @@ class WorkspaceMembersService {
         },
       });
 
-      return user;
+      const { password: userPassword, ...userWithoutPassword } = updatedUser;
+
+      return { ...userWithoutPassword, workspace };
     } catch (error) {
       console.log("ERROR ->", error);
 
