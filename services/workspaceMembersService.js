@@ -96,7 +96,7 @@ class WorkspaceMembersService {
             name,
             email,
             roleId: matchingRole.id,
-            isTourCompleted: true,
+            // isTourCompleted: true,
           },
         });
 

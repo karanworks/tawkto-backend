@@ -32,6 +32,27 @@ class workspaceController {
       response.error(res, 400);
     }
   }
+  async getUserDetails(req, res) {
+    try {
+      const userDetails = await WorkspaceService.getUserDetails(req);
+
+      if (workspaces) {
+        response.success(res, 200, {
+          message: "User details fetched successfully",
+          status: "success",
+          data: userDetails,
+        });
+      } else {
+        response.success(res, 200, {
+          message: "User details not found",
+          status: "success",
+        });
+      }
+    } catch (error) {
+      console.log("Error while fetching user details ->", error);
+      response.error(res, 400);
+    }
+  }
   async getWorkspaces(req, res) {
     try {
       const workspaces = await WorkspaceService.getWorkspaces(req);

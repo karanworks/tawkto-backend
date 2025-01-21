@@ -2,6 +2,8 @@ const response = require("../utils/response");
 const RegisterService = require("../services/registerService");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const Token = require("../utils/token");
+const getMenus = require("../utils/getMenus");
 
 class RegisterController {
   async register(req, res) {
@@ -46,6 +48,7 @@ class RegisterController {
         console.log("CHECK USER ->", user);
 
         if (user) {
+          const generatedToken = Token.generateToken({ id: user.id });
           const userUpdated = await prisma.user.update({
             where: {
               id: user.id,
@@ -53,15 +56,48 @@ class RegisterController {
             data: {
               isVerified: true,
               verificationToken: null,
+              token: generatedToken,
             },
           });
+          const expirationDate = new Date(
+            Date.now() + 15 * 24 * 60 * 60 * 1000
+          );
 
-          console.log("VERIFY EMAIL WORKING ->", userUpdated);
+          res.cookie("token", generatedToken, {
+            expires: expirationDate,
+            httpOnly: true,
+            secure: true,
+            sameSite: true,
+            domain: "ascent-bpo.com",
+          });
 
-          res.redirect("/login");
+          const { password, ...userWithoutPassword } = user;
+          const menus = await getMenus(req, res, user);
+
+          response.success(res, 200, {
+            message: "User logged in successfully",
+            status: "success",
+            data: { ...userWithoutPassword, menus },
+          });
+
+          // cookie expiration date - 15 days
+
+          // res.redirect("/connect-website");
+          // console.log("/////////////////VERFIYING EMAIL/////////////////////");
+
+          // res.json({
+          //   message: "Data fetched successfully ->",
+          //   data: { name: "Karan", age: "26" },
+          // });
 
           // res.send("<h3>Email verified successfully! Now you can login</h3>");
           // res.redirect("https://ascent-bpo.com/login");
+        } else {
+          response.error(res, 200, {
+            message: "Email already verified",
+            status: "failure",
+          });
+          // res.send("<h3>Your email has already been verified!</h3>");
         }
       }
     } catch (error) {

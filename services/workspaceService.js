@@ -56,6 +56,20 @@ class WorkspaceService {
       throw new Error("Error while creating workspace ->", error);
     }
   }
+  async getUserDetails(req) {
+    try {
+      console.log(
+        "GOT THE COOKIES WHILE GETTING USER DETAILS FOR DIRECT LOGIN ->",
+        req.cookies
+      );
+
+      return true;
+    } catch (error) {
+      console.log("ERROR ->", error);
+
+      throw new Error("Error while getting workspaces ->", error);
+    }
+  }
   async getWorkspaces(req) {
     try {
       const { userId } = req.params;

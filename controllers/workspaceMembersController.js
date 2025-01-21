@@ -67,6 +67,16 @@ class workspaceMembersController {
         const menus = await getMenus(req, res, user);
         const generatedToken = Token.generateToken({ id: user.id });
 
+        // cookie expiration date - 15 days
+        const expirationDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+        res.cookie("token", generatedToken, {
+          expires: expirationDate,
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+          domain: "ascent-bpo.com",
+        });
+
         response.success(res, 201, {
           message: "Workspace member joined successfully",
           status: "success",

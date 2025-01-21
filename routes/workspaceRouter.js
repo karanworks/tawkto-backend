@@ -3,7 +3,7 @@ const workspaceRouter = express.Router({ mergeParams: true });
 const workspaceValidator = require("../validators/workspaceValidator");
 const workspaceController = require("../controllers/workspaceController");
 
-workspaceRouter.get("/workspace/:userId", workspaceController.getWorkspaces);
+workspaceRouter.get("/get-user-details", workspaceController.getUserDetails);
 workspaceRouter.post(
   "/workspace",
   workspaceValidator.validateWorkspace,

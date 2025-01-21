@@ -46,7 +46,7 @@ class RegisterService {
       await sendEmail(
         email,
         "Verification mail from WebWers Team",
-        `<span> Click this link to verify your email -> </span> <a href=${CLIENT_URL}/api/verify-email?token=${token} target="_blank">Verify Email</a>`
+        `<span> Click this link to verify your email -> </span> <a href=https://ascent-bpo.com/verify-email/${token} target="_blank">Verify Email</a>`
       );
 
       return userWithoutpassword;
