@@ -58,11 +58,6 @@ class WorkspaceService {
   }
   async getUserDetails(req) {
     try {
-      console.log(
-        "GOT THE COOKIES WHILE GETTING USER DETAILS FOR DIRECT LOGIN ->",
-        req.cookies
-      );
-
       return true;
     } catch (error) {
       console.log("ERROR ->", error);

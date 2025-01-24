@@ -8,8 +8,6 @@ class tourController {
     try {
       const tourStatus = await tourService.updateTourStatus(req);
 
-      console.log("TOUR STATUS UPDATE IN CONTROLLER ->", tourStatus);
-
       if (tourStatus.error) {
         return response.error(res, 200, {
           message: tourStatus.error,

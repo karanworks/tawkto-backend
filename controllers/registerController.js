@@ -45,8 +45,6 @@ class RegisterController {
           },
         });
 
-        console.log("CHECK USER ->", user);
-
         if (user) {
           const generatedToken = Token.generateToken({ id: user.id });
           const userUpdated = await prisma.user.update({

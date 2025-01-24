@@ -2,9 +2,11 @@ const express = require("express");
 const workspaceMembersRouter = express.Router({ mergeParams: true });
 const workspaceMembersValidator = require("../validators/workspaceMembersValidator");
 const workspaceMembersController = require("../controllers/workspaceMembersController");
+const authorizeUser = require("../middlewares/authorizeUser");
 
 workspaceMembersRouter.get(
   "/workspace-members/:workspaceId",
+  authorizeUser,
   workspaceMembersController.workspaceMembers
 );
 workspaceMembersRouter.post(

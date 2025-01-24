@@ -188,7 +188,7 @@ app.get("/api/widget/:workspaceId", async (req, res) => {
       window.addEventListener("message", (event) => {
   if (event.data?.type === "resizeIframe" && event.data.height) {
 
-  console.log("IFRAME HEIGHT ->", event.data.height, event.data.width)
+  
     iframeElement.style.height = event.data.height;
     iframeElement.style.width = event.data.width;
   }
@@ -293,8 +293,6 @@ io.on("connection", (socket) => {
       socket.data.role = "visitor";
 
       socket.join(visitor.id);
-
-      console.log("VISITOR JOINED", socket.id);
     } catch (error) {
       console.log("Error inside visitor-join event ->", error);
     }
@@ -304,10 +302,6 @@ io.on("connection", (socket) => {
     socket.data.role = "agent";
     socket.data.agentId = agentId;
     socket.join(workspaceId);
-
-    console.log("ROOMS WHILE AGENT JOINED ->", io.sockets.adapter.rooms);
-
-    console.log("AGENT JOINED", socket.id, "WORKSPACE ID ->", workspaceId);
   });
 
   socket.on(
@@ -346,15 +340,11 @@ io.on("connection", (socket) => {
           });
           socket.data.chatId = chat.id;
 
-          console.log("CHAT ID WHILE TRYING TO GET MESSAGES ->", chat.id);
-
           messages = await prisma.message.findMany({
             where: {
               chatId: chat.id,
             },
           });
-
-          console.log("MESSAGES WHEN INITIATING A CHAT ->", messages);
         }
 
         socket.data.workspaceId = workspaceId;
@@ -381,8 +371,6 @@ io.on("connection", (socket) => {
   );
 
   socket.on("typing", ({ user }) => {
-    console.log("THIS USER IS TYPING", user);
-
     let targetVisitor = null;
 
     if (user.type === "agent") {
@@ -402,8 +390,6 @@ io.on("connection", (socket) => {
 
   socket.on("message", async ({ message, chatId, sender, to }) => {
     try {
-      console.log("CHAT ID IN MESSAGE ->", chatId);
-
       const chat = await prisma.chat.findFirst({
         where: {
           id: chatId,
@@ -471,8 +457,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("widget-connected", (workspace) => {
-    console.log("ROOMS WHEN WIDGET CONNECTED ->", io.sockets.adapter.rooms);
-
     io.to(workspace.id).emit("widget-connected", workspace);
   });
 
@@ -510,8 +494,6 @@ io.on("connection", (socket) => {
 
       io.to(socket.id).emit("visitor-status-update", status);
       io.to(workspaceId).emit("visitor-status-update", status);
-
-      console.log("A USER IS ONLINE!");
     } catch (error) {
       console.log("error in visitor status event ->", error);
     }
@@ -562,9 +544,7 @@ io.on("connection", (socket) => {
 });
 
 io.engine.on("connection_error", (err) => {
-  console.log("SOCKET ERROR 1 ->", err.code); // 3
-  console.log("SOCKET ERROR 2 ->", err.message); // "Bad request"
-  console.log("SOCKET ERROR 3 ->", err.context); // { name: 'TRANSPORT_MISMATCH', transport: 'websocket', previousTransport: 'polling' }
+  console.log("SOCKET ERROR ->", err); // 3
 });
 
 // Global error handler
