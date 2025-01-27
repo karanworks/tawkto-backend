@@ -1,6 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 const chatStatus = require("../constants/chatStatus");
 
 class ChatRequestsService {

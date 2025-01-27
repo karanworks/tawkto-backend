@@ -1,6 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 
 class VisitorDetailsService {
   async getVisitorDetails(req) {

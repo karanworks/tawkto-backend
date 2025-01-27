@@ -8,8 +8,6 @@ class SolvedChatService {
       const { chatId } = req.params;
       const { status } = req.body;
 
-      console.log("GOT THE STATUS ->", status);
-
       const solvedChat = await prisma.chat.findFirst({
         where: {
           id: chatId,

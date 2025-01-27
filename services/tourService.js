@@ -1,11 +1,10 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 
 class TourService {
   async updateTourStatus(req) {
     try {
-      const loggedInUser = await getLoggedInUser(req);
+      const loggedInUser = req.user;
 
       if (loggedInUser) {
         const updatedTourStatus = await prisma.user.update({
@@ -18,11 +17,6 @@ class TourService {
         });
 
         if (updatedTourStatus) {
-          console.log(
-            "RETURN TRUE CONDITION WAS TRIGGERED ->",
-            updatedTourStatus
-          );
-
           return true;
         } else {
           console.log("ELSE CONDITION WAS TRIGGERED ");

@@ -1,7 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const Token = require("../utils/token");
-const generateRefreshAndAccessToken = require("../utils/generateRefreshAndAccessToken");
+const generateAccessToken = require("../utils/generateAccessToken");
 const jwt = require("jsonwebtoken");
 
 class LoginService {
@@ -15,25 +14,11 @@ class LoginService {
         },
       });
 
-      const { accessToken, refreshToken } = generateRefreshAndAccessToken(
-        user.id
-      );
+      const { accessToken } = generateAccessToken(user.id);
 
       if (!user) {
         return { error: "User not found with this email" }; // Return null if the user is not found
       }
-
-      const token = Token.generateToken({ id: user.id });
-
-      // Update user token
-      await prisma.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          token,
-        },
-      });
 
       if (user.password === password) {
         if (!user.isVerified) {
@@ -54,13 +39,9 @@ class LoginService {
           return {
             user: {
               ...userWithoutPassword,
-              token,
               workspace: null,
             },
-            tokens: {
-              accessToken,
-              refreshToken,
-            },
+            accessToken,
           };
         }
 
@@ -101,25 +82,14 @@ class LoginService {
           });
         }
 
-        await prisma.session.create({
-          data: {
-            userId: user.id,
-            refreshToken,
-          },
-        });
-
         const { password: userPassword, ...userWithoutPassword } = user;
 
         return {
           user: {
             ...userWithoutPassword,
-            token,
             workspace: { ...workspace, workspaceMembers: workspaceMembersInfo },
           },
-          tokens: {
-            accessToken,
-            refreshToken,
-          },
+          accessToken,
         };
       } else {
         return { error: "Wrong password!" };
@@ -129,35 +99,35 @@ class LoginService {
     }
   }
 
-  async refreshToken(req, res) {
-    try {
-      const { refresh_token } = req.cookies;
+  // async refreshToken(req, res) {
+  //   try {
+  //     const { refresh_token } = req.cookies;
 
-      const newAccessToken = jwt.verify(
-        refresh_token,
-        process.env.REFRESH_TOKEN_SECRET,
-        (refreshErr, refreshUser) => {
-          if (refreshErr) {
-            return res
-              .status(403)
-              .json({ message: "Invalid or expired refresh token" });
-          }
+  //     const newAccessToken = jwt.verify(
+  //       refresh_token,
+  //       process.env.REFRESH_TOKEN_SECRET,
+  //       (refreshErr, refreshUser) => {
+  //         if (refreshErr) {
+  //           return res
+  //             .status(403)
+  //             .json({ message: "Invalid or expired refresh token" });
+  //         }
 
-          const newAccessToken = jwt.sign(
-            { id: refreshUser.id, username: refreshUser.username }, // Add relevant user data
-            process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: "30s" } // Short expiry for access tokens
-          );
+  //         const newAccessToken = jwt.sign(
+  //           { id: refreshUser.id, username: refreshUser.username }, // Add relevant user data
+  //           process.env.ACCESS_TOKEN_SECRET,
+  //           { expiresIn: "30s" } // Short expiry for access tokens
+  //         );
 
-          return { access_token: newAccessToken };
-        }
-      );
+  //         return { access_token: newAccessToken };
+  //       }
+  //     );
 
-      return newAccessToken;
-    } catch (error) {
-      console.log("Error while refreshing access token ->", error);
-    }
-  }
+  //     return newAccessToken;
+  //   } catch (error) {
+  //     console.log("Error while refreshing access token ->", error);
+  //   }
+  // }
 }
 
 module.exports = new LoginService();

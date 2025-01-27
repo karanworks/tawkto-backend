@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const jwt = require("jsonwebtoken");
 
 const prisma = new PrismaClient();
 
@@ -22,9 +23,11 @@ async function getLoggedInUser(req) {
       return null;
     }
 
+    const result = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
     const loggedInUser = await prisma.user.findFirst({
       where: {
-        token: token,
+        id: result.userId,
       },
     });
 

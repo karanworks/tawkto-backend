@@ -1,7 +1,6 @@
 const response = require("../utils/response");
 const workspaceMembersService = require("../services/workspaceMembersService");
 const { PrismaClient } = require("@prisma/client");
-const Token = require("../utils/token");
 const getMenus = require("../utils/getMenus");
 const prisma = new PrismaClient();
 
@@ -60,17 +59,8 @@ class workspaceMembersController {
 
       if (user) {
         const menus = await getMenus(req, res, user);
-        const generatedToken = Token.generateToken({ id: user.id });
 
         // cookie expiration date - 15 days
-        const expirationDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-        res.cookie("token", generatedToken, {
-          expires: expirationDate,
-          httpOnly: true,
-          secure: true,
-          sameSite: true,
-          domain: "ascent-bpo.com",
-        });
 
         response.success(res, 201, {
           message: "Workspace member joined successfully",
@@ -79,7 +69,6 @@ class workspaceMembersController {
             user: {
               ...user,
               menus,
-              token: generatedToken,
             },
             workspace: user.workspace,
           },

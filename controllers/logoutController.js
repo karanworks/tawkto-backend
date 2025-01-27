@@ -6,7 +6,6 @@ class LogoutController {
     try {
       const user = logoutService.logout(req);
       if (user) {
-        res.clearCookie("token");
         response.success(res, 200, {
           message: "User logged out successfully!",
           status: "success",

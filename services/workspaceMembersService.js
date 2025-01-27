@@ -1,6 +1,7 @@
 const Token = require("../utils/token");
 const sendEmail = require("../utils/sendEmail");
 const { PrismaClient } = require("@prisma/client");
+const generateAccessToken = require("../utils/generateAccessToken");
 const prisma = new PrismaClient();
 
 class WorkspaceMembersService {
@@ -209,9 +210,10 @@ class WorkspaceMembersService {
         },
       });
 
+      const { accessToken } = generateAccessToken(user.id);
       const { password: userPassword, ...userWithoutPassword } = updatedUser;
 
-      return { ...userWithoutPassword, workspace };
+      return { ...userWithoutPassword, workspace, accessToken };
     } catch (error) {
       console.log("ERROR ->", error);
 

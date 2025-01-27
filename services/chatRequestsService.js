@@ -1,6 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 const chatStatus = require("../constants/chatStatus");
 
 class ChatRequestsService {
@@ -70,7 +69,6 @@ class ChatRequestsService {
       const filteredRequests = chatRequests
         .map((request) => {
           if (request.status === chatStatus.PENDING) {
-
             return request;
           } else if (request.status === chatStatus.ACCEPTED) {
             if (user.roleId === 1) {

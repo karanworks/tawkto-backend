@@ -1,14 +1,14 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const getLoggedInUser = require("../utils/getLoggedInUser");
 
 class WorkspaceService {
   async createWorkspace(req) {
     try {
       const { websiteAddress, workspaceName } = req.body;
-      const loggedInUser = await getLoggedInUser(req);
 
-      console.log("LOGGED IN USER ->", loggedInUser);
+      const user = req.user;
+
+      console.log("LOGGED IN USER ->", user);
 
       const alreadyExists = await prisma.workspace.findFirst({
         where: {
@@ -24,14 +24,14 @@ class WorkspaceService {
         data: {
           website: websiteAddress,
           name: workspaceName,
-          createdBy: loggedInUser.id,
+          createdBy: user.id,
         },
       });
 
       await prisma.workspaceMembers.create({
         data: {
           workspaceId: workspace.id,
-          memberId: loggedInUser.id,
+          memberId: user.id,
           invitationAccepted: true,
         },
       });

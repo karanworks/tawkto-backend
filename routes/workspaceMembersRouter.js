@@ -11,6 +11,7 @@ workspaceMembersRouter.get(
 );
 workspaceMembersRouter.post(
   "/invite-member",
+  authorizeUser,
   workspaceMembersValidator.validateWorkspaceMembers,
   workspaceMembersController.inviteWorkspaceMembers
 );
