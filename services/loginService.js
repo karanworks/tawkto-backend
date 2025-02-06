@@ -8,19 +8,25 @@ class LoginService {
     try {
       const { email, password } = body;
 
+      console.log("LOGIN API GOT TRIGGERED ->", email, password);
+
       const user = await prisma.user.findFirst({
         where: {
           email,
         },
       });
 
-      const { accessToken } = generateAccessToken(user.id);
+      console.log("REUQEST CAUGHT IN LOGIN SERVICE ->", user);
 
       if (!user) {
+        console.log("VERIFY EMAIL CONDITION TRIGGERED");
+
         return { error: "User not found with this email" }; // Return null if the user is not found
       }
 
       if (user.password === password) {
+        const { accessToken } = generateAccessToken(user.id);
+
         if (!user.isVerified) {
           return { error: "Please verify your email!" };
         }

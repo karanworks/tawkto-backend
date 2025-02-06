@@ -6,11 +6,11 @@ const getMenus = require("../utils/getMenus");
 class LoginController {
   async login(req, res) {
     try {
-      const { user, accessToken } = await loginService.login(req.body);
+      const { user, accessToken, error } = await loginService.login(req.body);
 
-      if (user?.error) {
+      if (error) {
         return response.error(res, 200, {
-          message: user.error,
+          message: error,
           status: "failure",
         });
       }
