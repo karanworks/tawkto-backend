@@ -16,7 +16,7 @@ class SolvedChatsController {
       } else {
         response.success(res, 200, {
           message: "solved chats not found",
-          status: "success",
+          status: "failure",
         });
       }
     } catch (error) {

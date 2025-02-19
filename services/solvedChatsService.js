@@ -53,6 +53,9 @@ class SolvedChatService {
           workspaceId,
           status: chatStatus.SOLVED,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
 
       const solvedChatsWithMessages = await Promise.all(

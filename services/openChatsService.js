@@ -17,6 +17,9 @@ class ChatRequestsService {
           workspaceId,
           status: chatStatus.ACCEPTED,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
 
       const chatWithMessages = await Promise.all(

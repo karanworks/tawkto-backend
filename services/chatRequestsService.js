@@ -64,7 +64,15 @@ class ChatRequestsService {
           },
           workspaceId,
         },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
+
+      console.log(
+        "CHECKING THE CHAT REQUESTS IF THEY ARE SORTED",
+        chatRequests
+      );
 
       const filteredRequests = chatRequests
         .map((request) => {

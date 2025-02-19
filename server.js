@@ -6,6 +6,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
 const path = require("path");
+const { sendNotification } = require("./utils/sendNotification");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -26,6 +27,7 @@ const chatStatus = require("./constants/chatStatus");
 const solvedChatsRouter = require("./routes/solvedChatsRouter");
 const tourRouter = require("./routes/tourRouter");
 const visitorChatRouter = require("./routes/visitorChatRouter");
+const notificationTokenRouter = require("./routes/notificationToken");
 
 const app = express();
 
@@ -248,6 +250,7 @@ app.use("/api", openChatsRouter);
 app.use("/api", solvedChatsRouter);
 app.use("/api", widgetStatusRouter);
 app.use("/api", tourRouter);
+app.use("/api", notificationTokenRouter);
 
 const CLIENT_URL =
   process.env.NODE_ENV === "production"
@@ -257,6 +260,8 @@ const CLIENT_URL =
 console.log("CURRENT ENVIRONMENT ->", CLIENT_URL);
 
 io.on("connection", (socket) => {
+  console.log("A user connected via websockets");
+
   socket.on("visitor-join", async ({ id, name, email, workspaceId }) => {
     try {
       let visitor;
