@@ -14,7 +14,7 @@ class NotificationTokenService {
       });
 
       if (existingToken) {
-        await prisma.notificationToken.update({
+        const updatedToken = await prisma.notificationToken.update({
           where: {
             id: existingToken.id,
           },
@@ -23,7 +23,7 @@ class NotificationTokenService {
           },
         });
 
-        return { pushToken };
+        return { pushToken: updatedToken };
       } else {
         const pushToken = await prisma.notificationToken.create({
           data: {
@@ -31,6 +31,7 @@ class NotificationTokenService {
             expoPushToken,
           },
         });
+
         return { pushToken };
       }
     } catch (error) {

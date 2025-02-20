@@ -6,6 +6,9 @@ class NotificationTokenController {
     try {
       const { pushToken, error } =
         await NotificationTokenService.registerNotificationToken(req);
+      // const result = await NotificationTokenService.registerNotificationToken(
+      //   req
+      // );
 
       if (error) {
         return response.error(res, 200, {

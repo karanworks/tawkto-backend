@@ -6,7 +6,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
 const path = require("path");
-const { sendNotification } = require("./utils/sendNotification");
+const sendNotification = require("./utils/sendNotification");
 
 //Prisma
 const { PrismaClient } = require("@prisma/client");
@@ -28,6 +28,7 @@ const solvedChatsRouter = require("./routes/solvedChatsRouter");
 const tourRouter = require("./routes/tourRouter");
 const visitorChatRouter = require("./routes/visitorChatRouter");
 const notificationTokenRouter = require("./routes/notificationToken");
+const { promiseHooks } = require("v8");
 
 const app = express();
 
@@ -358,6 +359,13 @@ io.on("connection", (socket) => {
 
         callback(chat);
 
+        console.log(
+          "VISITOR MESSAGE REQUEST GOT TRIGGERED ->",
+          visitor,
+          chat,
+          messages
+        );
+
         socket.to(workspaceId).emit("visitor-message-request", {
           visitor,
           ...chat,
@@ -411,7 +419,76 @@ io.on("connection", (socket) => {
         },
       });
 
+      console.log("CHAT STATUS ->", chat);
+      console.log("CHAT PENDING NEW MESSAGE ->", newMessage);
+
       if (socket.data.role === "visitor") {
+        const chatsWithSameWorkspaceId = await prisma.chat.findFirst({
+          where: {
+            workspaceId: to,
+            visitorId: socket.data.visitorId,
+          },
+        });
+
+        const chatMembers = await prisma.chatAssign.findMany({
+          where: {
+            chatId: chatsWithSameWorkspaceId.id,
+            userId: {
+              not: socket.data.visitorId,
+            },
+          },
+        });
+
+        const usersToSendNotification = await Promise.all(
+          chatMembers?.map(async (member) => {
+            const userNotificationPusToken =
+              await prisma.notificationToken.findFirst({
+                where: {
+                  userId: member.userId,
+                },
+              });
+
+            return userNotificationPusToken.expoPushToken;
+          })
+        );
+
+        if (chat.status === "pending") {
+          const workspaceMembers = await prisma.workspaceMembers.findMany({
+            where: {
+              workspaceId: chat.workspaceId,
+              invitationAccepted: true,
+            },
+          });
+
+          const workspaceMembersPushToken = await Promise.all(
+            workspaceMembers.map(async (member) => {
+              const notificationToken =
+                await prisma.notificationToken.findFirst({
+                  where: {
+                    userId: member.memberId,
+                  },
+                });
+
+              return notificationToken ? notificationToken.expoPushToken : null;
+            })
+          );
+
+          // Filter out null values in case some members don't have tokens
+          const validPushTokens = workspaceMembersPushToken.filter(Boolean);
+
+          sendNotification(
+            validPushTokens,
+            "You have new message request",
+            `${newMessage.sender.name}: ${newMessage.content}`
+          );
+        } else {
+          sendNotification(
+            usersToSendNotification,
+            newMessage.sender.name,
+            newMessage.content
+          );
+        }
+
         io.to(socket.id).emit("message", newMessage);
         io.to(to).emit("message", newMessage);
       } else if (socket.data.role === "agent") {
