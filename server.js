@@ -478,7 +478,7 @@ io.on("connection", (socket) => {
 
           sendNotification(
             validPushTokens,
-            "You have new message request",
+            "You have a new message request",
             `${newMessage.sender.name}: ${newMessage.content}`
           );
         } else {
