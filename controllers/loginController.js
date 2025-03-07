@@ -16,21 +16,26 @@ class LoginController {
       }
 
       if (user) {
-        if (!user.isVerified) {
-          return response.error(res, 400, {
-            message: "Please verify your email",
-            status: "failure",
-          });
-        } else {
-          const menus = await getMenus(req, res, user);
+        // if (!user.isVerified) {
+        //   return response.error(res, 400, {
+        //     message: "Please verify your email",
+        //     status: "failure",
+        //   });
+        // } else if (!user.status) {
+        //   return response.error(res, 403, {
+        //     message: "Your account has been deactivated",
+        //     status: "failure",
+        //   });
+        // } else {
+        const menus = await getMenus(req, res, user);
 
-          response.success(res, 200, {
-            message: "User logged in successfully",
-            status: "success",
-            data: { ...user, menus, access_token: accessToken },
-          });
-        }
+        response.success(res, 200, {
+          message: "User logged in successfully",
+          status: "success",
+          data: { ...user, menus, access_token: accessToken },
+        });
       }
+      // }
     } catch (error) {
       console.log("Error while login ->", error);
       response.error(res, 400);

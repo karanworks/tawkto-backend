@@ -28,7 +28,7 @@ const solvedChatsRouter = require("./routes/solvedChatsRouter");
 const tourRouter = require("./routes/tourRouter");
 const visitorChatRouter = require("./routes/visitorChatRouter");
 const notificationTokenRouter = require("./routes/notificationToken");
-const { promiseHooks } = require("v8");
+const userRouter = require("./routes/userRouter");
 
 const app = express();
 
@@ -252,6 +252,7 @@ app.use("/api", solvedChatsRouter);
 app.use("/api", widgetStatusRouter);
 app.use("/api", tourRouter);
 app.use("/api", notificationTokenRouter);
+app.use("/api", userRouter);
 
 const CLIENT_URL =
   process.env.NODE_ENV === "production"
@@ -479,13 +480,20 @@ io.on("connection", (socket) => {
           sendNotification(
             validPushTokens,
             "You have a new message request",
-            `${newMessage.sender.name}: ${newMessage.content}`
+            `${newMessage.sender.name}: ${newMessage.content}`,
+            {
+              type: "MESSAGE_REQUEST",
+            }
           );
         } else {
           sendNotification(
             usersToSendNotification,
             newMessage.sender.name,
-            newMessage.content
+            newMessage.content,
+            {
+              type: "NEW_MESSAGE",
+              chatId: newMessage.chatId,
+            }
           );
         }
 

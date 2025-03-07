@@ -24,6 +24,7 @@ model User{
   verificationToken String?
   isTourCompleted Boolean @default(false)
   roleId Int @default(1)
+  status Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

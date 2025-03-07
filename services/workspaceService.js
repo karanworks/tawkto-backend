@@ -8,8 +8,6 @@ class WorkspaceService {
 
       const user = req.user;
 
-      console.log("LOGGED IN USER ->", user);
-
       const alreadyExists = await prisma.workspace.findFirst({
         where: {
           website: websiteAddress,
@@ -90,6 +88,36 @@ class WorkspaceService {
       console.log("ERROR ->", error);
 
       throw new Error("Error while getting workspaces ->", error);
+    }
+  }
+
+  async updateWorkspace(req) {
+    try {
+      const { workspaceName } = req.body;
+      const { workspaceId } = req.params;
+
+      const user = req.user;
+
+      console.log(
+        "GETTING THE WORKSPACE ID AND WORKSPACE NAME WHILE UPDATING->",
+        workspaceId,
+        workspaceName
+      );
+
+      const workspace = await prisma.workspace.update({
+        where: {
+          id: workspaceId,
+        },
+        data: {
+          name: workspaceName,
+        },
+      });
+
+      return workspace;
+    } catch (error) {
+      console.log("Error while updating workspace ->", error);
+
+      throw new Error("Error while updating workspace ->", error);
     }
   }
 }

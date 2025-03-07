@@ -32,6 +32,34 @@ class workspaceController {
       response.error(res, 400);
     }
   }
+  async updateWorkspace(req, res) {
+    try {
+      const workspace = await WorkspaceService.updateWorkspace(req);
+
+      if (workspace.error) {
+        return response.error(res, 200, {
+          message: workspace.error,
+          status: "failure",
+        });
+      }
+
+      if (workspace && !workspace.error) {
+        response.success(res, 201, {
+          message: "Workspace updated successfully",
+          status: "success",
+          data: workspace,
+        });
+      } else {
+        response.error(res, 400, {
+          message: "There was some error while updating the workspace",
+          status: "failure",
+        });
+      }
+    } catch (error) {
+      console.log("Error while updating workspace ->", error);
+      response.error(res, 400);
+    }
+  }
   async getUserDetails(req, res) {
     try {
       const userDetails = await WorkspaceService.getUserDetails(req);

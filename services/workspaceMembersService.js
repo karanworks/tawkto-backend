@@ -8,6 +8,8 @@ class WorkspaceMembersService {
   async workspaceMembers(req) {
     const { workspaceId } = req.params;
 
+    console.log("GETTING WORKSPACE ID ->", workspaceId);
+
     try {
       const workspaceMembersIds = await prisma.workspaceMembers.findMany({
         where: {
@@ -20,20 +22,31 @@ class WorkspaceMembersService {
           id: {
             in: workspaceMembersIds.map((member) => member.memberId),
           },
+          status: 1,
         },
       });
 
-      const workspaceMembersInfo = workspaceMembersIds.map((memberIdRecord) => {
-        const userInfo = workspaceMembers.find(
-          (user) => user.id === memberIdRecord.memberId
-        );
-        return {
-          invitationAccepted: memberIdRecord.invitationAccepted,
-          name: userInfo.name,
-          email: userInfo.email,
-          roleId: userInfo.roleId,
-        };
-      });
+      console.log("WORKSPACE MEMBERS ->", workspaceMembers);
+
+      const workspaceMembersInfo = workspaceMembersIds
+        .map((memberIdRecord) => {
+          const userInfo = workspaceMembers.find(
+            (user) => user.id === memberIdRecord.memberId && user.status === 1
+          );
+
+          if (userInfo) {
+            return {
+              id: memberIdRecord.memberId,
+              invitationAccepted: memberIdRecord.invitationAccepted,
+              name: userInfo.name,
+              email: userInfo.email,
+              roleId: userInfo.roleId,
+            };
+          } else {
+            return null;
+          }
+        })
+        .filter((member) => member !== null);
 
       return workspaceMembersInfo;
     } catch (error) {

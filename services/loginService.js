@@ -16,11 +16,7 @@ class LoginService {
         },
       });
 
-      console.log("REUQEST CAUGHT IN LOGIN SERVICE ->", user);
-
       if (!user) {
-        console.log("VERIFY EMAIL CONDITION TRIGGERED");
-
         return { error: "User not found with this email" }; // Return null if the user is not found
       }
 
@@ -29,6 +25,9 @@ class LoginService {
 
         if (!user.isVerified) {
           return { error: "Please verify your email!" };
+        }
+        if (!user.status) {
+          return { error: "Your account has been deactivated!" };
         }
 
         // Find workspace member entry

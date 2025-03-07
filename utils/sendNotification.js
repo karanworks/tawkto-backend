@@ -11,6 +11,8 @@ async function sendNotification(pushTokens, title, body, data = {}) {
   let messages = [];
 
   for (let pushToken of pushTokens) {
+    console.log("NOTIFICATION DATA HERE ->", data);
+
     if (!Expo.isExpoPushToken(pushToken)) {
       console.error(`Push token ${pushToken} is not a valid Expo push token`);
       continue;

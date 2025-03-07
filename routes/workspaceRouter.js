@@ -9,11 +9,17 @@ workspaceRouter.get(
   authorizeUser,
   workspaceController.getUserDetails
 );
+
 workspaceRouter.post(
   "/workspace",
   authorizeUser,
   workspaceValidator.validateWorkspace,
   workspaceController.createWorkspace
+);
+workspaceRouter.patch(
+  "/workspace/:workspaceId",
+  authorizeUser,
+  workspaceController.updateWorkspace
 );
 
 module.exports = workspaceRouter;

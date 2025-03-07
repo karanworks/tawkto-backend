@@ -6,12 +6,12 @@ const authorizeUser = require("../middlewares/authorizeUser");
 
 workspaceMembersRouter.get(
   "/workspace-members/:workspaceId",
-  authorizeUser,
+  // authorizeUser,
   workspaceMembersController.workspaceMembers
 );
 workspaceMembersRouter.post(
   "/invite-member",
-  authorizeUser,
+  // authorizeUser,
   workspaceMembersValidator.validateWorkspaceMembers,
   workspaceMembersController.inviteWorkspaceMembers
 );
