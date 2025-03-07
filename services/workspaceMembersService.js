@@ -112,6 +112,8 @@ class WorkspaceMembersService {
           },
         });
 
+        console.log("INVITED THIS USER ->", user);
+
         const token = Token.generateToken({ id: user.id });
 
         await prisma.user.update({

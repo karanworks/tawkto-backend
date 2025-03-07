@@ -37,9 +37,11 @@ class workspaceMembersController {
           message: "Workspace member invited successfully",
           status: "success",
           data: {
+            id: workspaceMember.id,
             name: workspaceMember.name,
             email: workspaceMember.email,
             invitationAccepted: false,
+            roleId: workspaceMember.roleId,
           },
         });
       } else {
