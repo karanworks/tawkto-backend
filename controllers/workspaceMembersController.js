@@ -53,6 +53,42 @@ class workspaceMembersController {
       response.error(res, 400);
     }
   }
+  async updateMember(req, res) {
+    try {
+      const { user, error } = await workspaceMembersService.updateMember(req);
+
+      console.log("USER AFTER UPDATING ->", user);
+
+      if (error) {
+        response.error(res, 200, {
+          message: error,
+          status: "failure",
+        });
+      }
+
+      if (user) {
+        response.success(res, 200, {
+          message: "Workspace member updated successfully",
+          status: "success",
+          data: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            roleId: user.roleId,
+            invitationAccepted: user.invitationAccepted,
+          },
+        });
+      } else {
+        response.error(res, 400, {
+          message: "There was some error while updating the workspace member",
+          status: "failure",
+        });
+      }
+    } catch (error) {
+      console.log("Error while inviting workspace member ->", error);
+      response.error(res, 400);
+    }
+  }
   async setPassword(req, res) {
     try {
       const user = await workspaceMembersService.setPassword(req);

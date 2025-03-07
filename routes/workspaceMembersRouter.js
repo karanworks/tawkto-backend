@@ -9,6 +9,12 @@ workspaceMembersRouter.get(
   // authorizeUser,
   workspaceMembersController.workspaceMembers
 );
+workspaceMembersRouter.patch(
+  "/update-member/:userId",
+  // authorizeUser,
+  // workspaceMembersValidator.validateWorkspaceMembers,
+  workspaceMembersController.updateMember
+);
 workspaceMembersRouter.post(
   "/invite-member",
   // authorizeUser,

@@ -8,8 +8,6 @@ class WorkspaceMembersService {
   async workspaceMembers(req) {
     const { workspaceId } = req.params;
 
-    console.log("GETTING WORKSPACE ID ->", workspaceId);
-
     try {
       const workspaceMembersIds = await prisma.workspaceMembers.findMany({
         where: {
@@ -179,6 +177,50 @@ class WorkspaceMembersService {
       console.log("ERROR ->", error);
 
       throw new Error("Error while inviting member ->", error);
+    }
+  }
+  async updateMember(req) {
+    const { userId } = req.params;
+    const { name, email, role } = req.body;
+
+    try {
+      const matchingRole = await prisma.role.findFirst({
+        where: {
+          name: role,
+        },
+      });
+
+      const invitation = await prisma.workspaceMembers.findFirst({
+        where: {
+          memberId: userId,
+        },
+      });
+
+      const user = await prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          name,
+          email,
+          roleId: matchingRole.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          roleId: true,
+        },
+      });
+
+      return {
+        user: { ...user, invitationAccepted: invitation.invitationAccepted },
+        error: null,
+      };
+    } catch (error) {
+      console.log("ERROR WHILE FETCHING WORKSPACE MEMBERS ->", error);
+
+      throw new Error("Error while fetching workspace members ->", error);
     }
   }
   async setPassword(req) {
